@@ -29,6 +29,8 @@ export interface GameTeam {
 
 export type GameState = 'pre' | 'in' | 'post';
 
+export type SeasonStage = 'Preseason' | 'Regular season' | 'Postseason';
+
 export interface Game {
   id: string;
   date: string;
@@ -42,6 +44,21 @@ export interface Game {
   leagueId: string;
   /** ESPN's own live win-probability model, present only once a game is in progress. */
   liveWinProbability: { home: number; away: number } | null;
+  /** Whether this is a preseason, regular-season, or postseason game. */
+  seasonStage: SeasonStage;
+}
+
+export interface TeamInjury {
+  playerName: string;
+  position: string | null;
+  status: string | null;
+}
+
+export interface TeamStanding {
+  record: string | null;
+  streak: string | null;
+  playoffSeed: string | null;
+  pointDifferential: string | null;
 }
 
 export interface AppState {

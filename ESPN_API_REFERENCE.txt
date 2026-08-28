@@ -105,20 +105,7 @@ ENDPOINTS ALREADY USED IN THIS APP (src/services/api.ts)
          record                 season-to-date record object (present here,
                                  absent on the scoreboard endpoint's competitors)
 
-
-================================================================================
-ENDPOINTS AVAILABLE BUT NOT YET USED IN THIS APP
-================================================================================
-
-4) TEAM DETAIL - single team, richer than the list endpoint
-   GET /{sport}/{league}/teams/{teamId}
-
-   Adds over the list endpoint: record (current season), groups (division/
-   conference), franchise info, links, and nextEvent[] (the team's next
-   scheduled game, inline - handy if you only need "what's next" without a
-   full schedule fetch).
-
-5) ROSTER - a team's full player list
+4) ROSTER / INJURIES - a team's full player list
    GET /{sport}/{league}/teams/{teamId}/roster
 
    Response shape:
@@ -130,21 +117,31 @@ ENDPOINTS AVAILABLE BUT NOT YET USED IN THIS APP
          jersey, position {name, displayName, abbreviation}
          height, displayHeight, weight, displayWeight, age, dateOfBirth
          college, birthPlace, headshot
-         injuries[]               PLAYER-LEVEL injury status, if any
+         injuries[]               PLAYER-LEVEL injury status, if any - each
+                                   entry is {status, date}, e.g.
+                                   {"status": "Questionable", "date": "..."}
          experience, contract, status
 
-   This is the one endpoint that could plug the "on-device model doesn't
-   know about recent trades/injuries" gap PocketPundit's README calls out -
-   fetching current roster + injuries and feeding relevant bits into the AI
-   prompt would ground it in facts closer to game day, without needing the
-   model itself to know anything current.
+   getTeamInjuries() in api.ts calls this and filters down to just players
+   with a non-empty injuries[], capped to 8 - a full 45-player roster dump
+   would be pure noise in an AI prompt; a short "who's banged up" list is
+   the useful part. This directly plugs the "on-device model doesn't know
+   about recent trades/injuries" gap the README calls out: the model's own
+   knowledge is frozen at its training cutoff, so this endpoint is how the
+   app hands it real, current facts instead.
 
-6) STANDINGS - full league table
+5) STANDINGS - full league table
    GET https://site.api.espn.com/apis/v2/sports/{sport}/{league}/standings
    (note: different path than everything else - no "/site/" segment)
 
    Response shape:
-     children[]                  one per conference/group
+     children[]                  one per conference/group (NFL: 2, one per
+                                  conference, each already listing all 16
+                                  teams flat - no need to recurse into a
+                                  third division level for this league, but
+                                  getTeamStanding()'s search is recursive
+                                  into children[].children anyway in case
+                                  another sport nests deeper)
        name, abbreviation, isConference
        standings.entries[]
          team {id, displayName, abbreviation, logos}
@@ -153,6 +150,25 @@ ENDPOINTS AVAILABLE BUT NOT YET USED IN THIS APP
                                   ties, winPercent, gamesBehind, streak,
                                   pointsFor, pointsAgainst, pointDifferential,
                                   divisionWins/Losses/Ties, playoffSeed
+                                  (displayValue is the human-readable one to
+                                  use directly, e.g. streak "W2", overall "2-0")
+
+   getTeamStanding() pulls streak, playoffSeed, and pointDifferential from
+   here (record itself is skipped - already covered by the scoreboard/
+   schedule endpoints' own `records[]`, no need to fetch it twice).
+
+
+================================================================================
+ENDPOINTS AVAILABLE BUT NOT YET USED IN THIS APP
+================================================================================
+
+6) TEAM DETAIL - single team, richer than the list endpoint
+   GET /{sport}/{league}/teams/{teamId}
+
+   Adds over the list endpoint: record (current season), groups (division/
+   conference), franchise info, links, and nextEvent[] (the team's next
+   scheduled game, inline - handy if you only need "what's next" without a
+   full schedule fetch).
 
 7) NEWS - headlines, league-wide or team-filtered
    GET /{sport}/{league}/news

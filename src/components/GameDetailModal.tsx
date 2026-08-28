@@ -48,7 +48,9 @@ export function GameDetailModal({
     setStatus('loading');
     setText('');
     ai.analyzeMatchup({
+      leagueId,
       leagueLabel,
+      seasonStage: game.seasonStage,
       home: game.home,
       away: game.away,
       liveWinProbability: game.liveWinProbability,
@@ -66,9 +68,9 @@ export function GameDetailModal({
     return () => {
       cancelled = true;
     };
-    // ai.analyzeMatchup is stable per model-ready state; game/leagueLabel drive re-analysis.
+    // ai.analyzeMatchup is stable per model-ready state; game/leagueId/leagueLabel drive re-analysis.
     // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [game, leagueLabel, ai.isReady]);
+  }, [game, leagueId, leagueLabel, ai.isReady]);
 
   function viewSchedule(team: GameTeam) {
     if (!team.id) return;

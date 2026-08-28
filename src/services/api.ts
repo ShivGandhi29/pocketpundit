@@ -1,4 +1,4 @@
-import type { Game, League, ScheduleGame, Team } from '@/types/pocketpundit';
+import type { Game, League, ScheduleGame, SeasonStage, Team, TeamInjury, TeamStanding } from '@/types/pocketpundit';
 
 // No CORS proxy needed here: this app is native (iOS/Android), and CORS is a
 // browser-enforced restriction that doesn't apply to native fetch calls.
@@ -71,6 +71,19 @@ function simplifyTeams(payload: any): Team[] {
     .sort((a: Team, b: Team) => a.name.localeCompare(b.name));
 }
 
+// American leagues expose season.type as 1/2/3 (pre/regular/post). Soccer
+// (EPL) has no such split — type is an arbitrary competition id and the
+// whole thing is just "the season" — so anything not clearly 1 or 3 is
+// treated as a regular-season game, which is the accurate framing for both
+// the "type 2" American case and every soccer fixture.
+function seasonStageFromEvent(event: any): SeasonStage {
+  const type = event.season?.type;
+  const slug: string = event.season?.slug ?? '';
+  if (type === 1 || slug.includes('preseason')) return 'Preseason';
+  if (type === 3 || slug.includes('postseason') || slug.includes('playoff')) return 'Postseason';
+  return 'Regular season';
+}
+
 function simplifyGames(payload: any): Omit<Game, 'leagueId'>[] {
   const events = Array.isArray(payload?.events) ? payload.events : [];
   return events.map((event: any) => {
@@ -109,6 +122,7 @@ function simplifyGames(payload: any): Omit<Game, 'leagueId'>[] {
       away: toTeam(away),
       venue: competition.venue?.fullName ?? null,
       liveWinProbability,
+      seasonStage: seasonStageFromEvent(event),
     };
   });
 }
@@ -157,6 +171,58 @@ export async function getTeamSchedule(leagueId: string, teamId: string): Promise
     `https://site.api.espn.com/apis/site/v2/sports/${sport}/${league}/teams/${teamId}/schedule${query}`
   );
   return simplifySchedule(payload, teamId);
+}
+
+export async function getTeamInjuries(leagueId: string, teamId: string): Promise<TeamInjury[]> {
+  const { sport, league } = leaguePath(leagueId);
+  const payload = await fetchEspn<any>(
+    `https://site.api.espn.com/apis/site/v2/sports/${sport}/${league}/teams/${teamId}/roster`
+  );
+  const groups = Array.isArray(payload?.athletes) ? payload.athletes : [];
+  const injured: TeamInjury[] = [];
+  for (const group of groups) {
+    for (const player of group.items ?? []) {
+      if (player.injuries?.length) {
+        injured.push({
+          playerName: player.displayName ?? player.fullName ?? 'Unknown player',
+          position: player.position?.abbreviation ?? null,
+          status: player.injuries[0]?.status ?? null,
+        });
+      }
+    }
+  }
+  // Cap it — a compact list of who's out is useful grounding for the AI prompt;
+  // a full injury report for every roster spot is just noise for that purpose.
+  return injured.slice(0, 8);
+}
+
+// Standings lives under a different base path than every other endpoint here
+// (no "/site/" segment) — verified against the live API while building this.
+function findStandingsEntry(node: any, teamId: string): any {
+  const entries = node?.standings?.entries;
+  if (Array.isArray(entries)) {
+    const match = entries.find((e: any) => e.team?.id === teamId);
+    if (match) return match;
+  }
+  for (const child of node?.children ?? []) {
+    const found = findStandingsEntry(child, teamId);
+    if (found) return found;
+  }
+  return null;
+}
+
+export async function getTeamStanding(leagueId: string, teamId: string): Promise<TeamStanding | null> {
+  const { sport, league } = leaguePath(leagueId);
+  const payload = await fetchEspn<any>(`https://site.api.espn.com/apis/v2/sports/${sport}/${league}/standings`);
+  const entry = findStandingsEntry(payload, teamId);
+  if (!entry) return null;
+  const stat = (name: string) => entry.stats?.find((s: any) => s.name === name)?.displayValue ?? null;
+  return {
+    record: stat('overall'),
+    streak: stat('streak'),
+    playoffSeed: stat('playoffSeed'),
+    pointDifferential: stat('pointDifferential'),
+  };
 }
 
 export async function getTeams(leagueId: string): Promise<Team[]> {
