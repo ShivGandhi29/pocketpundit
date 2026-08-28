@@ -1,10 +1,12 @@
 import { useState } from 'react';
-import { StyleSheet, Text, View } from 'react-native';
+import { StyleSheet, View } from 'react-native';
+import { Text } from '@/components/AppText';
 import Animated, { FadeInRight, FadeOutLeft, FadeInLeft, FadeOutRight } from 'react-native-reanimated';
 
 import { LeaguePicker } from '@/components/LeaguePicker';
 import { TeamPicker } from '@/components/TeamPicker';
 import { Colors, Spacing } from '@/constants/theme';
+import { Fonts } from '@/constants/fonts';
 import type { AppState, FavoriteTeam, League } from '@/types/pocketpundit';
 
 function StepDots({ total, current }: { total: number; current: number }) {
@@ -101,5 +103,5 @@ const styles = StyleSheet.create({
   },
   dot: { width: 6, height: 6, borderRadius: 3, backgroundColor: Colors.border },
   dotActive: { backgroundColor: Colors.accent, width: 18 },
-  dotsLabel: { marginLeft: Spacing.s2, color: Colors.textMuted, fontSize: 12, fontWeight: '600' },
+  dotsLabel: { marginLeft: Spacing.s2, color: Colors.textMuted, fontSize: 12, fontFamily: Fonts.semibold, fontWeight: '600' },
 });

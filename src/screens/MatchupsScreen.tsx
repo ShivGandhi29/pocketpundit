@@ -1,7 +1,8 @@
 import { Ionicons } from '@expo/vector-icons';
 import { useRouter } from 'expo-router';
 import { useCallback, useEffect, useMemo, useState } from 'react';
-import { FlatList, Image, Pressable, RefreshControl, StyleSheet, Text, View } from 'react-native';
+import { FlatList, Image, Pressable, RefreshControl, StyleSheet, View } from 'react-native';
+import { Text } from '@/components/AppText';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 
 import { DateStrip } from '@/components/DateStrip';
@@ -9,9 +10,11 @@ import { GameCard } from '@/components/GameCard';
 import { GameDetailModal } from '@/components/GameDetailModal';
 import { MotorsportDetailModal } from '@/components/MotorsportDetailModal';
 import { MotorsportEventCard } from '@/components/MotorsportEventCard';
+import { StandingsModal } from '@/components/StandingsModal';
 import { WeekStrip } from '@/components/WeekStrip';
 import { getGames, getMotorsportSchedule, getNflWeekCalendar } from '@/services/api';
 import { Colors, Radius, Spacing } from '@/constants/theme';
+import { Fonts } from '@/constants/fonts';
 import { addDays, dateWithOffset, isSameLocalDay, toEspnDateParam } from '@/utils/formatGameTime';
 import type { AppState, Game, League, MotorsportEvent, WeekCalendar } from '@/types/pocketpundit';
 
@@ -33,9 +36,15 @@ export function MatchupsScreen({ leagues, state }: { leagues: League[]; state: A
   const [motorsportEvents, setMotorsportEvents] = useState<MotorsportEvent[] | null>(null);
   const [motorsportError, setMotorsportError] = useState<string | null>(null);
   const [openMotorsportEvent, setOpenMotorsportEvent] = useState<MotorsportEvent | null>(null);
+  const [standingsOpen, setStandingsOpen] = useState(false);
 
   const isNflWeekTab = activeTab === 'nfl';
-  const isMotorsportTab = leagues.find((l) => l.id === activeTab)?.kind === 'motorsport';
+  const activeLeague = leagues.find((l) => l.id === activeTab);
+  const isMotorsportTab = activeLeague?.kind === 'motorsport';
+  // Standings are a per-league table — "All" spans multiple leagues at once
+  // and motorsport doesn't have a team standings concept, so the button only
+  // makes sense once one specific team-sport league is the active tab.
+  const canShowStandings = activeTab !== 'all' && activeLeague?.kind === 'team';
 
   useEffect(() => {
     if (!isNflWeekTab || nflCalendar) return;
@@ -204,6 +213,16 @@ export function MatchupsScreen({ leagues, state }: { leagues: League[]; state: A
               />
             </Pressable>
           ) : null}
+          {canShowStandings ? (
+            <Pressable
+              onPress={() => setStandingsOpen(true)}
+              hitSlop={12}
+              style={styles.iconBtn}
+              accessibilityLabel="View standings"
+            >
+              <Ionicons name="list-outline" size={22} color={Colors.text} />
+            </Pressable>
+          ) : null}
           <Pressable onPress={() => router.push('/settings')} hitSlop={12} style={styles.iconBtn}>
             <Ionicons name="settings-outline" size={22} color={Colors.text} />
           </Pressable>
@@ -312,6 +331,13 @@ export function MatchupsScreen({ leagues, state }: { leagues: League[]; state: A
         leagueLabel={leagueLabel(activeTab)}
         onClose={() => setOpenMotorsportEvent(null)}
       />
+
+      <StandingsModal
+        visible={standingsOpen && canShowStandings}
+        leagueId={activeTab}
+        leagueLabel={leagueLabel(activeTab)}
+        onClose={() => setStandingsOpen(false)}
+      />
     </View>
   );
 }
@@ -327,7 +353,7 @@ const styles = StyleSheet.create({
     borderBottomWidth: 1,
     borderBottomColor: Colors.border,
   },
-  brand: { color: Colors.text, fontSize: 18, fontWeight: '700', letterSpacing: -0.2 },
+  brand: { color: Colors.text, fontSize: 18, fontFamily: Fonts.bold, fontWeight: '700', letterSpacing: -0.2 },
   topbarActions: { flexDirection: 'row', alignItems: 'center', gap: Spacing.s2 },
   iconBtn: { width: 40, height: 40, alignItems: 'center', justifyContent: 'center', borderRadius: Radius.pill },
   iconBtnActive: { backgroundColor: Colors.accent },
@@ -356,7 +382,7 @@ const styles = StyleSheet.create({
     justifyContent: 'center',
   },
   tabLogo: { width: 20, height: 20, resizeMode: 'contain' },
-  tabText: { color: Colors.text, fontSize: 12, fontWeight: '600' },
+  tabText: { color: Colors.text, fontSize: 12, fontFamily: Fonts.semibold, fontWeight: '600' },
   tabTextSelected: { color: Colors.onAccent },
   list: { padding: Spacing.s4, paddingTop: 0, gap: Spacing.s3 },
   empty: { color: Colors.textMuted, textAlign: 'center', marginTop: Spacing.s6 },

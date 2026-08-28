@@ -1,8 +1,10 @@
 import { useEffect, useState } from 'react';
-import { ActivityIndicator, Image, Pressable, ScrollView, StyleSheet, Text, View } from 'react-native';
+import { ActivityIndicator, Image, Pressable, ScrollView, StyleSheet, View } from 'react-native';
+import { Text } from '@/components/AppText';
 
 import { getGameSummary } from '@/services/api';
 import { Colors, Radius, Spacing } from '@/constants/theme';
+import { Fonts } from '@/constants/fonts';
 import type {
   Game,
   GameLeaderEntry,
@@ -319,7 +321,7 @@ const styles = StyleSheet.create({
     backgroundColor: Colors.surface,
   },
   tabSelected: { backgroundColor: Colors.accent, borderColor: Colors.accent },
-  tabText: { color: Colors.text, fontSize: 13, fontWeight: '600' },
+  tabText: { color: Colors.text, fontSize: 13, fontFamily: Fonts.semibold, fontWeight: '600' },
   tabTextSelected: { color: Colors.onAccent },
   empty: { color: Colors.textMuted, fontSize: 14, textAlign: 'center', marginVertical: Spacing.s4 },
   teamToggleRow: { flexDirection: 'row', gap: Spacing.s2, marginBottom: Spacing.s3 },
@@ -337,11 +339,11 @@ const styles = StyleSheet.create({
   },
   teamToggleSelected: { backgroundColor: Colors.surfaceRaised, borderColor: Colors.accent },
   teamToggleLogo: { width: 20, height: 20, resizeMode: 'contain' },
-  teamToggleText: { color: Colors.textMuted, fontSize: 14, fontWeight: '700' },
+  teamToggleText: { color: Colors.textMuted, fontSize: 14, fontFamily: Fonts.bold, fontWeight: '700' },
   teamToggleTextSelected: { color: Colors.text },
   teamHeaderRow: { flexDirection: 'row', alignItems: 'center', gap: Spacing.s2, marginBottom: Spacing.s2 },
   teamHeaderLogo: { width: 22, height: 22, resizeMode: 'contain' },
-  teamHeaderText: { color: Colors.text, fontSize: 15, fontWeight: '700' },
+  teamHeaderText: { color: Colors.text, fontSize: 15, fontFamily: Fonts.bold, fontWeight: '700' },
   leadersTeamHeader: {
     flexDirection: 'row',
     justifyContent: 'space-between',
@@ -353,7 +355,7 @@ const styles = StyleSheet.create({
   leadersTeamHeaderSide: { flexDirection: 'row', alignItems: 'center', gap: Spacing.s2 },
   leadersTeamHeaderSideRight: { flexDirection: 'row-reverse' },
   leadersTeamLogo: { width: 26, height: 26, resizeMode: 'contain' },
-  leadersTeamAbbr: { color: Colors.text, fontSize: 15, fontWeight: '800' },
+  leadersTeamAbbr: { color: Colors.text, fontSize: 15, fontFamily: Fonts.extrabold, fontWeight: '800' },
   leaderCompareRow: {
     paddingVertical: Spacing.s3,
     borderBottomWidth: 1,
@@ -362,7 +364,7 @@ const styles = StyleSheet.create({
   leaderCompareLabel: {
     color: Colors.textMuted,
     fontSize: 12,
-    fontWeight: '700',
+    fontFamily: Fonts.bold, fontWeight: '700',
     textAlign: 'center',
     marginBottom: Spacing.s2,
   },
@@ -372,12 +374,12 @@ const styles = StyleSheet.create({
   leaderHeadshot: { width: 32, height: 32, borderRadius: 16, backgroundColor: Colors.surface },
   leaderCardInfo: { flex: 1 },
   leaderCardInfoRight: { alignItems: 'flex-end' },
-  leaderCardValue: { color: Colors.text, fontSize: 13, fontWeight: '800', fontVariant: ['tabular-nums'] },
+  leaderCardValue: { color: Colors.text, fontSize: 13, fontFamily: Fonts.extrabold, fontWeight: '800', fontVariant: ['tabular-nums'] },
   leaderCardSecondary: { color: Colors.textMuted, fontSize: 11, fontVariant: ['tabular-nums'], marginTop: 1 },
   leaderCardName: { color: Colors.textMuted, fontSize: 11, marginTop: 2 },
   textRight: { textAlign: 'right' },
   statGroup: { marginBottom: Spacing.s3 },
-  statGroupLabel: { color: Colors.accent, fontSize: 13, fontWeight: '700', marginBottom: Spacing.s1 },
+  statGroupLabel: { color: Colors.accent, fontSize: 13, fontFamily: Fonts.bold, fontWeight: '700', marginBottom: Spacing.s1 },
   boxRow: { flexDirection: 'row', borderBottomWidth: 1, borderBottomColor: Colors.border },
   boxCell: {
     width: 56,
@@ -387,8 +389,8 @@ const styles = StyleSheet.create({
     textAlign: 'right',
     fontVariant: ['tabular-nums'],
   },
-  boxNameCell: { width: 120, textAlign: 'left', fontWeight: '600' },
-  boxHeadText: { color: Colors.textMuted, fontWeight: '700' },
+  boxNameCell: { width: 120, textAlign: 'left', fontFamily: Fonts.semibold, fontWeight: '600' },
+  boxHeadText: { color: Colors.textMuted, fontFamily: Fonts.bold, fontWeight: '700' },
   teamStatsHeaderRow: {
     flexDirection: 'row',
     justifyContent: 'space-between',
@@ -400,14 +402,14 @@ const styles = StyleSheet.create({
   teamStatsHeaderSide: { flexDirection: 'row', alignItems: 'center', gap: Spacing.s2 },
   teamStatsHeaderSideRight: { flexDirection: 'row-reverse' },
   teamStatsHeaderLogo: { width: 20, height: 20, resizeMode: 'contain' },
-  teamStatsHeaderTeam: { color: Colors.text, fontSize: 13, fontWeight: '700' },
+  teamStatsHeaderTeam: { color: Colors.text, fontSize: 13, fontFamily: Fonts.bold, fontWeight: '700' },
   teamStatsRow: {
     paddingVertical: Spacing.s2,
     borderBottomWidth: 1,
     borderBottomColor: Colors.border,
   },
   teamStatsValuesRow: { flexDirection: 'row', alignItems: 'center', marginBottom: Spacing.s1 },
-  teamStatsValue: { flex: 1, color: Colors.text, fontSize: 14, fontWeight: '700' },
+  teamStatsValue: { flex: 1, color: Colors.text, fontSize: 14, fontFamily: Fonts.bold, fontWeight: '700' },
   teamStatsLabel: { flex: 1.4, color: Colors.textMuted, fontSize: 12, textAlign: 'center' },
   teamStatsBarTrack: {
     flexDirection: 'row',

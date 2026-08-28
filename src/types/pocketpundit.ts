@@ -10,11 +10,24 @@ export interface League {
   /**
    * 'team' leagues fit the Game/GameTeam model (two sides, a score) that
    * every other screen in this app is built around. 'motorsport' leagues
-   * (F1, IndyCar, NASCAR) are structurally different — one multi-driver
-   * race, no home/away — and get their own schedule/results screens instead
-   * of the score bug, box score, team stats, or AI analysis.
+   * (F1, IndyCar, NASCAR, and — despite the name — the PGA Tour) are
+   * structurally different: a multi-day event with individual competitors
+   * ranked on a leaderboard, not two sides with a score. They get their own
+   * schedule/results screens instead of the score bug, box score, team
+   * stats, or AI analysis.
    */
   kind: 'team' | 'motorsport';
+  /** Groups leagues by sport in the league picker (e.g. all soccer leagues together). */
+  sport:
+    | 'football'
+    | 'basketball'
+    | 'baseball'
+    | 'hockey'
+    | 'soccer'
+    | 'motorsport'
+    | 'golf'
+    | 'rugby'
+    | 'australian-football';
 }
 
 export interface Team {
@@ -197,6 +210,27 @@ export interface WeekCalendar {
   weeks: SeasonWeek[];
   /** Index into `weeks` matching the league's current week right now. */
   currentWeekIndex: number;
+}
+
+export interface StandingsColumn {
+  label: string;
+  value: string;
+}
+
+export interface StandingsRow {
+  teamId: string;
+  teamName: string;
+  abbreviation: string | null;
+  logo: string | null;
+  rank: number;
+  columns: StandingsColumn[];
+}
+
+export interface StandingsGroup {
+  id: string;
+  name: string;
+  columnLabels: string[];
+  rows: StandingsRow[];
 }
 
 export interface ScheduleGame {

@@ -1,8 +1,10 @@
 import { Ionicons } from '@expo/vector-icons';
 import { useMemo } from 'react';
-import { Pressable, StyleSheet, Text, View } from 'react-native';
+import { Pressable, StyleSheet, View } from 'react-native';
+import { Text } from '@/components/AppText';
 
 import { Colors, Radius, Spacing } from '@/constants/theme';
+import { Fonts } from '@/constants/fonts';
 import { addDays, dateWithOffset, isSameLocalDay } from '@/utils/formatGameTime';
 
 const WEEKDAY = new Intl.DateTimeFormat(undefined, { weekday: 'short' });
@@ -87,10 +89,10 @@ const styles = StyleSheet.create({
   // Absolutely positioned so it doesn't disturb the centered chevron/month
   // group — it only appears once the user has navigated away from today.
   todayBtn: { position: 'absolute', right: 0, top: 0, bottom: 0, width: 32, alignItems: 'center', justifyContent: 'center' },
-  monthLabel: { color: Colors.text, fontSize: 16, fontWeight: '700', minWidth: 148, textAlign: 'center' },
+  monthLabel: { color: Colors.text, fontSize: 16, fontFamily: Fonts.bold, fontWeight: '700', minWidth: 148, textAlign: 'center' },
   week: { flexDirection: 'row', justifyContent: 'space-between' },
   dayCol: { alignItems: 'center', gap: 4, width: 40 },
-  weekday: { color: Colors.textMuted, fontSize: 11, fontWeight: '700', letterSpacing: 0.3 },
+  weekday: { color: Colors.textMuted, fontSize: 11, fontFamily: Fonts.bold, fontWeight: '700', letterSpacing: 0.3 },
   dayCircle: {
     width: 36,
     height: 36,
@@ -99,7 +101,7 @@ const styles = StyleSheet.create({
     justifyContent: 'center',
   },
   dayCircleSelected: { backgroundColor: Colors.accent },
-  dayNumber: { color: Colors.text, fontSize: 15, fontWeight: '700' },
+  dayNumber: { color: Colors.text, fontSize: 15, fontFamily: Fonts.bold, fontWeight: '700' },
   textSelected: { color: Colors.onAccent },
   todayDot: { width: 4, height: 4, borderRadius: 2, backgroundColor: Colors.accent },
 });

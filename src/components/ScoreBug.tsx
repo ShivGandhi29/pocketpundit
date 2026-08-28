@@ -1,6 +1,8 @@
-import { Image, Pressable, StyleSheet, Text, View } from 'react-native';
+import { Image, Pressable, StyleSheet, View } from 'react-native';
+import { Text } from '@/components/AppText';
 
 import { Colors, Radius, Spacing } from '@/constants/theme';
+import { Fonts } from '@/constants/fonts';
 import { formatLocalKickoff } from '@/utils/formatGameTime';
 import type { Game, GameTeam } from '@/types/pocketpundit';
 
@@ -42,6 +44,13 @@ const REGULATION_PERIODS: Record<string, number> = {
   nfl: 4,
   nba: 4,
   nhl: 3,
+  wnba: 4,
+  nbl: 4,
+  afl: 4,
+  nrl: 2,
+  ncaaf: 4,
+  ncaam: 2, // men's college ball still plays two 20-minute halves, not quarters
+  ncaaw: 4, // women's college ball switched to four 10-minute quarters in 2015-16
 };
 
 function periodLabel(period: number, regulation: number): string {
@@ -137,7 +146,7 @@ const styles = StyleSheet.create({
   seasonStage: {
     color: Colors.textMuted,
     fontSize: 11,
-    fontWeight: '700',
+    fontFamily: Fonts.bold, fontWeight: '700',
     textTransform: 'uppercase',
     letterSpacing: 0.8,
     textAlign: 'center',
@@ -155,13 +164,13 @@ const styles = StyleSheet.create({
   },
   sidePressed: { opacity: 0.85 },
   logo: { width: 36, height: 36, resizeMode: 'contain', marginBottom: 2 },
-  teamAbbr: { color: Colors.text, fontSize: 13, fontWeight: '800', letterSpacing: 0.3 },
+  teamAbbr: { color: Colors.text, fontSize: 13, fontFamily: Fonts.extrabold, fontWeight: '800', letterSpacing: 0.3 },
   teamRecord: { color: Colors.textMuted, fontSize: 11, textAlign: 'center' },
   center: { alignItems: 'center', paddingHorizontal: Spacing.s2, minWidth: 88 },
-  score: { color: Colors.text, fontSize: 26, fontWeight: '800', fontVariant: ['tabular-nums'] },
-  status: { color: Colors.textMuted, fontSize: 11, fontWeight: '700', marginVertical: 2, textAlign: 'center' },
+  score: { color: Colors.text, fontSize: 26, fontFamily: Fonts.extrabold, fontWeight: '800', fontVariant: ['tabular-nums'] },
+  status: { color: Colors.textMuted, fontSize: 11, fontFamily: Fonts.bold, fontWeight: '700', marginVertical: 2, textAlign: 'center' },
   statusLive: { color: Colors.live },
-  statusPre: { color: Colors.textMuted, fontSize: 12, fontWeight: '600', textAlign: 'center' },
+  statusPre: { color: Colors.textMuted, fontSize: 12, fontFamily: Fonts.semibold, fontWeight: '600', textAlign: 'center' },
   linescore: { marginTop: Spacing.s3, paddingHorizontal: Spacing.s3, gap: 2 },
   linescoreRow: { flexDirection: 'row', justifyContent: 'center' },
   linescoreCell: {
@@ -173,7 +182,7 @@ const styles = StyleSheet.create({
     paddingVertical: 2,
   },
   linescoreHeadCell: { width: 40, textAlign: 'left' },
-  linescoreHeadText: { color: Colors.textMuted, fontWeight: '700' },
-  linescoreAbbr: { color: Colors.text, fontWeight: '700' },
-  linescoreTotal: { fontWeight: '800' },
+  linescoreHeadText: { color: Colors.textMuted, fontFamily: Fonts.bold, fontWeight: '700' },
+  linescoreAbbr: { color: Colors.text, fontFamily: Fonts.bold, fontWeight: '700' },
+  linescoreTotal: { fontFamily: Fonts.extrabold, fontWeight: '800' },
 });

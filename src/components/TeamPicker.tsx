@@ -1,9 +1,11 @@
 import { useEffect, useState } from 'react';
-import { ActivityIndicator, Image, Pressable, ScrollView, StyleSheet, Text, View } from 'react-native';
+import { ActivityIndicator, Image, Pressable, ScrollView, StyleSheet, View } from 'react-native';
+import { Text } from '@/components/AppText';
 import { SafeAreaView } from 'react-native-safe-area-context';
 
 import { getTeams } from '@/services/api';
 import { Colors, Radius, Spacing } from '@/constants/theme';
+import { Fonts } from '@/constants/fonts';
 import type { FavoriteTeam, League } from '@/types/pocketpundit';
 
 function TeamGroup({
@@ -115,13 +117,13 @@ export function TeamPicker({
 const styles = StyleSheet.create({
   container: { flex: 1 },
   scrollContent: { padding: Spacing.s4, paddingBottom: Spacing.s6 },
-  title: { color: Colors.text, fontSize: 26, fontWeight: '700', letterSpacing: -0.4, marginBottom: Spacing.s1 },
+  title: { color: Colors.text, fontSize: 26, fontFamily: Fonts.bold, fontWeight: '700', letterSpacing: -0.4, marginBottom: Spacing.s1 },
   subtitle: { color: Colors.textMuted, fontSize: 15, marginBottom: Spacing.s4 },
   group: { marginBottom: Spacing.s4 },
   groupHeading: {
     color: Colors.textMuted,
     fontSize: 13,
-    fontWeight: '700',
+    fontFamily: Fonts.bold, fontWeight: '700',
     textTransform: 'uppercase',
     letterSpacing: 0.6,
     marginBottom: Spacing.s2,
@@ -152,8 +154,8 @@ const styles = StyleSheet.create({
   },
   btn: { flex: 1, minHeight: 48, borderRadius: Radius.sm, alignItems: 'center', justifyContent: 'center' },
   btnPrimary: { backgroundColor: Colors.accent },
-  btnPrimaryText: { color: Colors.onAccent, fontWeight: '700', fontSize: 15 },
+  btnPrimaryText: { color: Colors.onAccent, fontFamily: Fonts.bold, fontWeight: '700', fontSize: 15 },
   btnGhost: { borderWidth: 1, borderColor: Colors.border },
-  btnGhostText: { color: Colors.text, fontWeight: '600', fontSize: 15 },
+  btnGhostText: { color: Colors.text, fontFamily: Fonts.semibold, fontWeight: '600', fontSize: 15 },
   pressed: { opacity: 0.85 },
 });

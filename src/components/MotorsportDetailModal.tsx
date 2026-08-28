@@ -1,9 +1,11 @@
 import { useEffect, useState } from 'react';
-import { ActivityIndicator, Image, Modal, Pressable, ScrollView, StyleSheet, Text, View } from 'react-native';
+import { ActivityIndicator, Image, Modal, Pressable, ScrollView, StyleSheet, View } from 'react-native';
+import { Text } from '@/components/AppText';
 import { SafeAreaProvider, SafeAreaView } from 'react-native-safe-area-context';
 
 import { getMotorsportEventDetail } from '@/services/api';
 import { Colors, Radius, Spacing } from '@/constants/theme';
+import { Fonts } from '@/constants/fonts';
 import { formatLocalKickoff } from '@/utils/formatGameTime';
 import type { MotorsportEvent, MotorsportEventDetail } from '@/types/pocketpundit';
 
@@ -117,13 +119,13 @@ const styles = StyleSheet.create({
     borderBottomWidth: 1,
     borderBottomColor: Colors.border,
   },
-  headerTitle: { flex: 1, color: Colors.text, fontSize: 16, fontWeight: '700' },
+  headerTitle: { flex: 1, color: Colors.text, fontSize: 16, fontFamily: Fonts.bold, fontWeight: '700' },
   closeBtn: { paddingHorizontal: Spacing.s2, paddingVertical: Spacing.s1 },
-  closeBtnText: { color: Colors.accent, fontWeight: '600', fontSize: 15 },
+  closeBtnText: { color: Colors.accent, fontFamily: Fonts.semibold, fontWeight: '600', fontSize: 15 },
   scrollContent: { padding: Spacing.s4 },
   error: { color: Colors.live, fontSize: 14, textAlign: 'center', marginVertical: Spacing.s4 },
   empty: { color: Colors.textMuted, fontSize: 14 },
-  sectionHeading: { color: Colors.accent, fontSize: 15, fontWeight: '700', marginBottom: Spacing.s2 },
+  sectionHeading: { color: Colors.accent, fontSize: 15, fontFamily: Fonts.bold, fontWeight: '700', marginBottom: Spacing.s2 },
   sessionCard: {
     backgroundColor: Colors.surfaceRaised,
     borderRadius: Radius.md,
@@ -132,9 +134,9 @@ const styles = StyleSheet.create({
     gap: Spacing.s1,
   },
   sessionRow: { flexDirection: 'row', justifyContent: 'space-between', paddingVertical: Spacing.s1 },
-  sessionLabel: { color: Colors.text, fontSize: 14, fontWeight: '700' },
+  sessionLabel: { color: Colors.text, fontSize: 14, fontFamily: Fonts.bold, fontWeight: '700' },
   sessionDetail: { color: Colors.textMuted, fontSize: 13, flexShrink: 1, textAlign: 'right' },
-  sessionLive: { color: Colors.live, fontWeight: '700' },
+  sessionLive: { color: Colors.live, fontFamily: Fonts.bold, fontWeight: '700' },
   resultsCard: {
     backgroundColor: Colors.surfaceRaised,
     borderRadius: Radius.md,
@@ -150,8 +152,8 @@ const styles = StyleSheet.create({
     borderBottomColor: Colors.border,
   },
   resultRowWinner: { backgroundColor: `${Colors.accent}1a` },
-  resultPosition: { width: 24, color: Colors.textMuted, fontSize: 14, fontWeight: '700', textAlign: 'center' },
+  resultPosition: { width: 24, color: Colors.textMuted, fontSize: 14, fontFamily: Fonts.bold, fontWeight: '700', textAlign: 'center' },
   resultFlag: { width: 18, height: 18, resizeMode: 'contain' },
-  resultName: { flex: 1, color: Colors.text, fontSize: 14, fontWeight: '600' },
+  resultName: { flex: 1, color: Colors.text, fontSize: 14, fontFamily: Fonts.semibold, fontWeight: '600' },
   resultWinnerText: { color: Colors.accent },
 });

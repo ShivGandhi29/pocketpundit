@@ -6,6 +6,7 @@ import type {
   MotorsportEventDetail,
   ScheduleGame,
   SeasonStage,
+  StandingsGroup,
   Team,
   TeamInjury,
   TeamStanding,
@@ -28,10 +29,10 @@ import type {
 // the most breadth of under the same verified request shape as EPL already
 // uses (soccer/{slug}, no seasontype split needed).
 export const LEAGUES: League[] = [
-  { id: 'nfl', label: 'NFL', shortLabel: 'NFL', logo: 'https://a.espncdn.com/i/teamlogos/leagues/500/nfl.png', popular: true, kind: 'team' },
-  { id: 'nba', label: 'NBA', shortLabel: 'NBA', logo: 'https://a.espncdn.com/i/teamlogos/leagues/500/nba.png', popular: true, kind: 'team' },
-  { id: 'mlb', label: 'MLB', shortLabel: 'MLB', logo: 'https://a.espncdn.com/i/teamlogos/leagues/500/mlb.png', popular: true, kind: 'team' },
-  { id: 'nhl', label: 'NHL', shortLabel: 'NHL', logo: 'https://a.espncdn.com/i/teamlogos/leagues/500/nhl.png', popular: true, kind: 'team' },
+  { id: 'nfl', label: 'NFL', shortLabel: 'NFL', logo: 'https://a.espncdn.com/i/teamlogos/leagues/500/nfl.png', popular: true, kind: 'team', sport: 'football' },
+  { id: 'nba', label: 'NBA', shortLabel: 'NBA', logo: 'https://a.espncdn.com/i/teamlogos/leagues/500/nba.png', popular: true, kind: 'team', sport: 'basketball' },
+  { id: 'mlb', label: 'MLB', shortLabel: 'MLB', logo: 'https://a.espncdn.com/i/teamlogos/leagues/500/mlb.png', popular: true, kind: 'team', sport: 'baseball' },
+  { id: 'nhl', label: 'NHL', shortLabel: 'NHL', logo: 'https://a.espncdn.com/i/teamlogos/leagues/500/nhl.png', popular: true, kind: 'team', sport: 'hockey' },
   {
     id: 'epl',
     label: 'Premier League',
@@ -39,6 +40,7 @@ export const LEAGUES: League[] = [
     logo: 'https://a.espncdn.com/i/leaguelogos/soccer/500/23.png',
     popular: true,
     kind: 'team',
+    sport: 'soccer',
   },
   {
     id: 'laliga',
@@ -47,6 +49,7 @@ export const LEAGUES: League[] = [
     logo: 'https://a.espncdn.com/i/leaguelogos/soccer/500/15.png',
     popular: false,
     kind: 'team',
+    sport: 'soccer',
   },
   {
     id: 'bundesliga',
@@ -55,6 +58,7 @@ export const LEAGUES: League[] = [
     logo: 'https://a.espncdn.com/i/leaguelogos/soccer/500/10.png',
     popular: false,
     kind: 'team',
+    sport: 'soccer',
   },
   {
     id: 'seriea',
@@ -63,6 +67,7 @@ export const LEAGUES: League[] = [
     logo: 'https://a.espncdn.com/i/leaguelogos/soccer/500/12.png',
     popular: false,
     kind: 'team',
+    sport: 'soccer',
   },
   {
     id: 'ligue1',
@@ -71,6 +76,7 @@ export const LEAGUES: League[] = [
     logo: 'https://a.espncdn.com/i/leaguelogos/soccer/500/9.png',
     popular: false,
     kind: 'team',
+    sport: 'soccer',
   },
   {
     id: 'ucl',
@@ -79,6 +85,7 @@ export const LEAGUES: League[] = [
     logo: 'https://a.espncdn.com/i/leaguelogos/soccer/500/2.png',
     popular: false,
     kind: 'team',
+    sport: 'soccer',
   },
   {
     id: 'mls',
@@ -87,6 +94,82 @@ export const LEAGUES: League[] = [
     logo: 'https://a.espncdn.com/i/leaguelogos/soccer/500/19.png',
     popular: false,
     kind: 'team',
+    sport: 'soccer',
+  },
+  {
+    id: 'aleague',
+    label: 'A-League Men',
+    shortLabel: 'A-LEAGUE',
+    logo: 'https://a.espncdn.com/i/leaguelogos/soccer/500/1308.png',
+    popular: false,
+    kind: 'team',
+    sport: 'soccer',
+  },
+  {
+    id: 'wnba',
+    label: 'WNBA',
+    shortLabel: 'WNBA',
+    logo: 'https://a.espncdn.com/i/teamlogos/leagues/500/wnba.png',
+    popular: false,
+    kind: 'team',
+    sport: 'basketball',
+  },
+  {
+    id: 'nbl',
+    label: 'NBL',
+    shortLabel: 'NBL',
+    logo: 'https://a.espncdn.com/i/teamlogos/leagues/500/nbl.png',
+    popular: false,
+    kind: 'team',
+    sport: 'basketball',
+  },
+  {
+    id: 'afl',
+    label: 'AFL',
+    shortLabel: 'AFL',
+    logo: 'https://a.espncdn.com/i/teamlogos/leagues/500/afl.png',
+    popular: false,
+    kind: 'team',
+    // Australian rules football — a different sport from American football
+    // despite the shared English word, so it gets its own group rather than
+    // being lumped in under NFL.
+    sport: 'australian-football',
+  },
+  {
+    id: 'ncaaf',
+    label: 'NCAA Football',
+    shortLabel: 'NCAAF',
+    logo: 'https://a.espncdn.com/redesign/assets/img/icons/ESPN-icon-football-college.png',
+    popular: false,
+    kind: 'team',
+    sport: 'football',
+  },
+  {
+    id: 'ncaam',
+    label: "NCAA Men's Basketball",
+    shortLabel: 'NCAAM',
+    logo: 'https://a.espncdn.com/redesign/assets/img/icons/ESPN-icon-basketball.png',
+    popular: false,
+    kind: 'team',
+    sport: 'basketball',
+  },
+  {
+    id: 'ncaaw',
+    label: "NCAA Women's Basketball",
+    shortLabel: 'NCAAW',
+    logo: 'https://a.espncdn.com/redesign/assets/img/icons/ESPN-icon-basketball.png',
+    popular: false,
+    kind: 'team',
+    sport: 'basketball',
+  },
+  {
+    id: 'nrl',
+    label: 'NRL',
+    shortLabel: 'NRL',
+    logo: 'https://a.espncdn.com/i/teamlogos/leagues/500/nrl.png',
+    popular: false,
+    kind: 'team',
+    sport: 'rugby',
   },
   // Motorsport: a fundamentally different shape (one multi-driver race, no
   // home/away) — see the `kind` field doc on League. F1's own schedule is
@@ -100,6 +183,7 @@ export const LEAGUES: League[] = [
     logo: 'https://a.espncdn.com/combiner/i?img=/i/teamlogos/leagues/500/f1.png',
     popular: true,
     kind: 'motorsport',
+    sport: 'motorsport',
   },
   {
     id: 'indycar',
@@ -108,6 +192,7 @@ export const LEAGUES: League[] = [
     logo: 'https://a.espncdn.com/combiner/i?img=/i/espn/teamlogos/500/indycar_series.png',
     popular: false,
     kind: 'motorsport',
+    sport: 'motorsport',
   },
   {
     id: 'nascar',
@@ -116,6 +201,20 @@ export const LEAGUES: League[] = [
     logo: 'https://a.espncdn.com/combiner/i?img=/redesign/assets/img/icons/ESPN-icon-NASCAR.png',
     popular: false,
     kind: 'motorsport',
+    sport: 'motorsport',
+  },
+  // Golf shares the exact same "multi-day event, leaderboard of individual
+  // competitors" shape ESPN already exposes for motorsport (same
+  // leagues[0].calendar → event.$ref pattern), so it reuses that `kind`
+  // rather than needing a third architecture.
+  {
+    id: 'pga',
+    label: 'PGA Tour',
+    shortLabel: 'PGA',
+    logo: 'https://a.espncdn.com/combiner/i?img=/i/teamlogos/leagues/500/pgatour.png',
+    popular: false,
+    kind: 'motorsport',
+    sport: 'golf',
   },
 ];
 
@@ -134,6 +233,19 @@ const LEAGUE_PATHS: Record<string, { sport: string; league: string }> = {
   ligue1: { sport: 'soccer', league: 'fra.1' },
   ucl: { sport: 'soccer', league: 'uefa.champions' },
   mls: { sport: 'soccer', league: 'usa.1' },
+  aleague: { sport: 'soccer', league: 'aus.1' },
+  wnba: { sport: 'basketball', league: 'wnba' },
+  nbl: { sport: 'basketball', league: 'nbl' },
+  afl: { sport: 'australian-football', league: 'afl' },
+  ncaaf: { sport: 'football', league: 'college-football' },
+  ncaam: { sport: 'basketball', league: 'mens-college-basketball' },
+  ncaaw: { sport: 'basketball', league: 'womens-college-basketball' },
+  // NRL's ESPN league slug is the opaque numeric id "3", not a mnemonic like
+  // every other league here — verified live against
+  // site.web.api.espn.com/apis/v2/scoreboard/header?sport=rugby-league,
+  // since the mnemonic-looking slugs ("nrl", "nrl-premiership") all 400.
+  nrl: { sport: 'rugby-league', league: '3' },
+  pga: { sport: 'golf', league: 'pga' },
 };
 
 // ESPN's schedule endpoint defaults to preseason for the American leagues
@@ -397,6 +509,64 @@ export async function getTeamStanding(leagueId: string, teamId: string): Promise
   };
 }
 
+// Collects every node in the standings tree that directly carries entries —
+// for NFL that's the two conferences, for a single-table league (EPL, the
+// post-2024 UCL league phase) it's just the one root-ish node, and for an
+// actual group-stage tournament it would be "Group A", "Group B", etc.
+// Whichever shape a given league's payload has, the UI adapts to however
+// many groups actually come back rather than assuming a fixed count.
+function collectStandingsGroups(node: any): any[] {
+  const entries = node?.standings?.entries;
+  if (Array.isArray(entries) && entries.length > 0) return [node];
+  return (node?.children ?? []).flatMap(collectStandingsGroups);
+}
+
+function standingsStat(stats: any[], name: string): string | null {
+  return stats?.find((s: any) => s.name === name)?.displayValue ?? null;
+}
+
+// ESPN's stat vocabulary differs by sport: soccer/hockey-style leagues report
+// a "points" table stat (win=3/2pts, draw/OTL=1pt), American leagues without
+// that concept just report win-loss. Branch on whichever shape this league's
+// entries actually have rather than hardcoding one sport's column set.
+function standingsColumns(sampleStats: any[]): { key: string; label: string }[] {
+  if (sampleStats.some((s) => s.name === 'points')) {
+    return [
+      { key: 'gamesPlayed', label: 'P' },
+      { key: 'wins', label: 'W' },
+      { key: 'pointDifferential', label: 'GD' },
+      { key: 'points', label: 'Pts' },
+    ];
+  }
+  return [
+    { key: 'wins', label: 'W' },
+    { key: 'losses', label: 'L' },
+    { key: 'winPercent', label: 'PCT' },
+    { key: 'streak', label: 'STRK' },
+  ];
+}
+
+export async function getStandings(leagueId: string): Promise<StandingsGroup[]> {
+  const { sport, league } = leaguePath(leagueId);
+  const payload = await fetchEspn<any>(`https://site.api.espn.com/apis/v2/sports/${sport}/${league}/standings`);
+  const groupNodes = collectStandingsGroups(payload);
+  const columns = groupNodes[0] ? standingsColumns(groupNodes[0].standings.entries[0]?.stats ?? []) : [];
+
+  return groupNodes.map((node, groupIndex) => ({
+    id: node.abbreviation || node.name || `group-${groupIndex}`,
+    name: node.name || node.abbreviation || `Group ${groupIndex + 1}`,
+    columnLabels: columns.map((c) => c.label),
+    rows: node.standings.entries.map((entry: any, i: number) => ({
+      teamId: entry.team?.id ?? '',
+      teamName: entry.team?.displayName ?? entry.team?.name ?? 'Unknown',
+      abbreviation: entry.team?.abbreviation ?? null,
+      logo: entry.team?.logos?.[0]?.href ?? null,
+      rank: i + 1,
+      columns: columns.map((c) => ({ label: c.label, value: standingsStat(entry.stats, c.key) ?? '-' })),
+    })),
+  }));
+}
+
 export async function getTeams(leagueId: string): Promise<Team[]> {
   const { sport, league } = leaguePath(leagueId);
   const payload = await fetchEspn(
@@ -477,30 +647,39 @@ function simplifyMotorsportSchedule(payload: any): MotorsportEvent[] {
 }
 
 // F1 reports each session with type.abbreviation (FP1/FP2/FP3/Qual/Race);
-// IndyCar/NASCAR reported a single untyped competition per event in every
-// case checked live — treated as "the race" when it's the only one.
+// IndyCar/NASCAR/golf all reported a single untyped competition per event in
+// every case checked live — treated as "the results session" when it's the
+// only one, regardless of sport.
 function isRaceSession(comp: any, totalSessions: number): boolean {
   if (comp.type?.abbreviation) return comp.type.abbreviation === 'Race';
   return totalSessions === 1;
 }
 
-function sessionLabel(comp: any, totalSessions: number): string {
-  return comp.type?.abbreviation || (totalSessions === 1 ? 'Race' : 'Session');
+// The single-session fallback label differs by sport: a solo motorsport
+// session is "the Race", but golf's one competition per event is a stroke-
+// play leaderboard, not a race.
+function sessionLabel(comp: any, totalSessions: number, sport: string): string {
+  if (comp.type?.abbreviation) return comp.type.abbreviation;
+  if (totalSessions > 1) return 'Session';
+  return sport === 'golf' ? 'Leaderboard' : 'Race';
 }
 
-function simplifyMotorsportDetail(payload: any): MotorsportEventDetail {
+function simplifyMotorsportDetail(payload: any, sport: string): MotorsportEventDetail {
   const comps = payload?.events?.[0]?.competitions ?? [];
   const sessions = comps.map((c: any) => ({
     id: c.id,
-    label: sessionLabel(c, comps.length),
+    label: sessionLabel(c, comps.length, sport),
     date: c.date,
     state: c.status?.type?.state ?? 'pre',
     detail: c.status?.type?.shortDetail || c.status?.type?.detail || '',
   }));
   const raceComp = comps.find((c: any) => isRaceSession(c, comps.length));
   const raceState = raceComp?.status?.type?.state ?? 'pre';
+  // Shown for both 'in' and 'post' (not just 'post') — a live leaderboard
+  // mid-round is exactly what a golf viewer checks for, and it's equally
+  // valid for a motorsport race already underway.
   const results =
-    raceState === 'post'
+    raceState !== 'pre'
       ? (raceComp.competitors ?? [])
           .slice()
           .sort((a: any, b: any) => (a.order ?? 99) - (b.order ?? 99))
@@ -508,7 +687,9 @@ function simplifyMotorsportDetail(payload: any): MotorsportEventDetail {
             position: c.order,
             driverName: c.athlete?.displayName ?? 'Unknown',
             countryFlag: c.athlete?.flag?.href ?? null,
-            winner: !!c.winner,
+            // Golf competitors don't carry a `winner` flag the way
+            // motorsport ones do — leaderboard position 1 stands in for it.
+            winner: c.winner ?? c.order === 1,
           }))
       : [];
   return { sessions, results, state: raceState };
@@ -533,5 +714,5 @@ export async function getMotorsportEventDetail(
   const payload = await fetchEspn<any>(
     `https://site.api.espn.com/apis/site/v2/sports/${sport}/${league}/scoreboard?dates=${dateParam}`
   );
-  return simplifyMotorsportDetail(payload);
+  return simplifyMotorsportDetail(payload, sport);
 }

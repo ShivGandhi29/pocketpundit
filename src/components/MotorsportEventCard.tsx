@@ -1,7 +1,9 @@
 import { Ionicons } from '@expo/vector-icons';
-import { Pressable, StyleSheet, Text, View } from 'react-native';
+import { Pressable, StyleSheet, View } from 'react-native';
+import { Text } from '@/components/AppText';
 
 import { Colors, Radius, Spacing } from '@/constants/theme';
+import { Fonts } from '@/constants/fonts';
 import { formatLocalKickoff } from '@/utils/formatGameTime';
 import type { MotorsportEvent } from '@/types/pocketpundit';
 
@@ -17,7 +19,7 @@ export function MotorsportEventCard({ event, onPress }: { event: MotorsportEvent
         <Text style={styles.name} numberOfLines={2}>
           {event.name}
         </Text>
-        {!isPast ? <Text style={styles.detail}>First session {formatLocalKickoff(event.date)}</Text> : null}
+        {!isPast ? <Text style={styles.detail}>Starts {formatLocalKickoff(event.date)}</Text> : null}
       </View>
       <Ionicons name="chevron-forward" size={18} color={Colors.textMuted} />
     </Pressable>
@@ -39,12 +41,12 @@ const styles = StyleSheet.create({
   info: { flex: 1, gap: 2 },
   status: {
     fontSize: 11,
-    fontWeight: '700',
+    fontFamily: Fonts.bold, fontWeight: '700',
     letterSpacing: 0.5,
     textTransform: 'uppercase',
     color: Colors.textMuted,
   },
   statusPast: { color: Colors.accent },
-  name: { color: Colors.text, fontSize: 16, fontWeight: '700' },
+  name: { color: Colors.text, fontSize: 16, fontFamily: Fonts.bold, fontWeight: '700' },
   detail: { color: Colors.textMuted, fontSize: 12 },
 });

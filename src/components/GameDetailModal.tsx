@@ -1,12 +1,14 @@
 import { useRouter } from 'expo-router';
 import { useEffect, useRef, useState } from 'react';
-import { ActivityIndicator, Modal, Pressable, ScrollView, StyleSheet, Text, View } from 'react-native';
+import { ActivityIndicator, Modal, Pressable, ScrollView, StyleSheet, View } from 'react-native';
+import { Text } from '@/components/AppText';
 import { SafeAreaProvider, SafeAreaView } from 'react-native-safe-area-context';
 
 import { GameStatsTabs } from '@/components/GameStatsTabs';
 import { ScoreBug } from '@/components/ScoreBug';
 import { useLocalAI } from '@/contexts/LocalAIContext';
 import { Colors, Radius, Spacing } from '@/constants/theme';
+import { Fonts } from '@/constants/fonts';
 import type { Game, GameTeam } from '@/types/pocketpundit';
 
 export function GameDetailModal({
@@ -166,12 +168,12 @@ const styles = StyleSheet.create({
     borderBottomWidth: 1,
     borderBottomColor: Colors.border,
   },
-  headerTitle: { flex: 1, color: Colors.text, fontSize: 16, fontWeight: '700' },
+  headerTitle: { flex: 1, color: Colors.text, fontSize: 16, fontFamily: Fonts.bold, fontWeight: '700' },
   closeBtn: { paddingHorizontal: Spacing.s2, paddingVertical: Spacing.s1 },
-  closeBtnText: { color: Colors.accent, fontWeight: '600', fontSize: 15 },
+  closeBtnText: { color: Colors.accent, fontFamily: Fonts.semibold, fontWeight: '600', fontSize: 15 },
   scrollContent: { padding: Spacing.s4 },
   scoreBugHint: { color: Colors.textMuted, fontSize: 12, textAlign: 'center', marginTop: -Spacing.s3, marginBottom: Spacing.s4 },
-  analysisHeading: { color: Colors.accent, fontSize: 15, fontWeight: '700', marginBottom: Spacing.s2 },
+  analysisHeading: { color: Colors.accent, fontSize: 15, fontFamily: Fonts.bold, fontWeight: '700', marginBottom: Spacing.s2 },
   loadingRow: { flexDirection: 'row', alignItems: 'center', gap: Spacing.s2, minHeight: 60 },
   loadingText: { color: Colors.textMuted, fontSize: 15 },
   analysisBody: { color: Colors.text, fontSize: 15, lineHeight: 22 },
@@ -184,9 +186,9 @@ const styles = StyleSheet.create({
     justifyContent: 'center',
   },
   analyzeBtnPressed: { opacity: 0.85 },
-  analyzeBtnText: { color: Colors.onAccent, fontWeight: '700', fontSize: 15 },
+  analyzeBtnText: { color: Colors.onAccent, fontFamily: Fonts.bold, fontWeight: '700', fontSize: 15 },
   reanalyzeBtn: { alignSelf: 'flex-start', minHeight: 44, justifyContent: 'center', marginTop: Spacing.s2 },
-  reanalyzeBtnText: { color: Colors.accent, fontWeight: '600', fontSize: 13 },
+  reanalyzeBtnText: { color: Colors.accent, fontFamily: Fonts.semibold, fontWeight: '600', fontSize: 13 },
   statsSection: {
     marginTop: Spacing.s5,
     paddingTop: Spacing.s4,

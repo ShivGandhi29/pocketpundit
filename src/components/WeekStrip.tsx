@@ -1,6 +1,8 @@
-import { FlatList, Pressable, StyleSheet, Text } from 'react-native';
+import { FlatList, Pressable, StyleSheet } from 'react-native';
+import { Text } from '@/components/AppText';
 
 import { Colors, Radius, Spacing } from '@/constants/theme';
+import { Fonts } from '@/constants/fonts';
 import type { SeasonWeek } from '@/types/pocketpundit';
 
 const MONTH_DAY = new Intl.DateTimeFormat(undefined, { month: 'short', day: 'numeric' });
@@ -60,7 +62,7 @@ const styles = StyleSheet.create({
     gap: 2,
   },
   pillSelected: { backgroundColor: Colors.accent, borderColor: Colors.accent },
-  weekLabel: { color: Colors.text, fontSize: 13, fontWeight: '700', textAlign: 'center' },
-  weekDate: { color: Colors.textMuted, fontSize: 11, fontWeight: '600', textAlign: 'center' },
+  weekLabel: { color: Colors.text, fontSize: 13, fontFamily: Fonts.bold, fontWeight: '700', textAlign: 'center' },
+  weekDate: { color: Colors.textMuted, fontSize: 11, fontFamily: Fonts.semibold, fontWeight: '600', textAlign: 'center' },
   textSelected: { color: Colors.onAccent },
 });

@@ -1,10 +1,12 @@
 import { useRouter } from 'expo-router';
 import { useEffect, useState } from 'react';
-import { FlatList, Image, Pressable, StyleSheet, Text, View } from 'react-native';
+import { FlatList, Image, Pressable, StyleSheet, View } from 'react-native';
+import { Text } from '@/components/AppText';
 import { SafeAreaView } from 'react-native-safe-area-context';
 
 import { getTeamSchedule } from '@/services/api';
 import { Colors, Radius, Spacing } from '@/constants/theme';
+import { Fonts } from '@/constants/fonts';
 import { formatLocalKickoff } from '@/utils/formatGameTime';
 import type { ScheduleGame } from '@/types/pocketpundit';
 
@@ -112,10 +114,10 @@ const styles = StyleSheet.create({
     borderBottomColor: Colors.border,
   },
   backBtn: { minWidth: 56, minHeight: 44, justifyContent: 'center' },
-  backBtnText: { color: Colors.accent, fontWeight: '600', fontSize: 15 },
+  backBtnText: { color: Colors.accent, fontFamily: Fonts.semibold, fontWeight: '600', fontSize: 15 },
   headerTitle: { flex: 1, flexDirection: 'row', alignItems: 'center', justifyContent: 'center', gap: Spacing.s2 },
   headerLogo: { width: 22, height: 22, resizeMode: 'contain' },
-  headerTitleText: { color: Colors.text, fontSize: 16, fontWeight: '700' },
+  headerTitleText: { color: Colors.text, fontSize: 16, fontFamily: Fonts.bold, fontWeight: '700' },
   list: { padding: Spacing.s4, gap: Spacing.s2 },
   empty: { color: Colors.textMuted, textAlign: 'center', marginTop: Spacing.s6 },
   row: {
@@ -129,12 +131,12 @@ const styles = StyleSheet.create({
     padding: Spacing.s3,
   },
   rowMain: { flex: 1, gap: Spacing.s1 },
-  rowTime: { color: Colors.textMuted, fontSize: 12, fontWeight: '700', textTransform: 'uppercase' },
+  rowTime: { color: Colors.textMuted, fontSize: 12, fontFamily: Fonts.bold, fontWeight: '700', textTransform: 'uppercase' },
   rowOpponentLine: { flexDirection: 'row', alignItems: 'center', gap: Spacing.s2 },
-  rowVs: { color: Colors.textMuted, fontSize: 14, fontWeight: '600' },
+  rowVs: { color: Colors.textMuted, fontSize: 14, fontFamily: Fonts.semibold, fontWeight: '600' },
   opponentLogo: { width: 20, height: 20, resizeMode: 'contain' },
-  rowOpponent: { color: Colors.text, fontSize: 15, fontWeight: '600', flexShrink: 1 },
+  rowOpponent: { color: Colors.text, fontSize: 15, fontFamily: Fonts.semibold, fontWeight: '600', flexShrink: 1 },
   resultBlock: { alignItems: 'flex-end', gap: 2 },
-  resultBadge: { fontSize: 16, fontWeight: '800' },
+  resultBadge: { fontSize: 16, fontFamily: Fonts.extrabold, fontWeight: '800' },
   scoreText: { color: Colors.textMuted, fontSize: 13, fontVariant: ['tabular-nums'] },
 });
