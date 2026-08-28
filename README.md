@@ -1,56 +1,46 @@
-# Welcome to your Expo app 👋
+# PocketPundit
 
-This is an [Expo](https://expo.dev) project created with [`create-expo-app`](https://www.npmjs.com/package/create-expo-app).
+A stripped-down sports companion: pick the leagues and teams you actually care about, see their matchups with nothing else competing for your attention, and tap any game for a quick AI prediction — who's favored, what's driving the pick, and what could flip it. The prediction runs entirely **on your phone**, offline, with no server anywhere in the loop.
 
-## Get started
+This is the React Native (Expo) rewrite of the original web prototype at `../Prototypes/2026-08-28-pocketpundit`, targeting iOS and Android from one codebase.
 
-1. Install dependencies
+## How it's put together
 
-   ```bash
-   npm install
-   ```
+- **`src/app/`** — Expo Router screens: `index.tsx` is the boot/onboarding/matchups flow, `settings.tsx` is a modal for editing leagues/teams.
+- **`src/components/`** — `LeaguePicker`, `TeamPicker`, `OnboardingFlow`, `GameCard`, `GameDetailModal`.
+- **`src/screens/MatchupsScreen.tsx`** — the main matchup list with league tabs, pull-to-refresh, and favorite-team pinning.
+- **`src/services/api.ts`** — fetches team/game data straight from ESPN's free public API (`site.api.espn.com`). No backend needed: this call comes from native code, not a browser, so the CORS restriction that forced the web prototype to run a proxy server simply doesn't apply here.
+- **`src/contexts/LocalAIContext.tsx`** — loads a small LLM on-device via [`react-native-executorch`](https://github.com/software-mansion/react-native-executorch) and exposes `analyzeMatchup()` to any screen.
+- **`src/storage/state.ts`** — AsyncStorage persistence for onboarding state (leagues/favorite teams).
 
-2. Start the app
+## On-device AI
 
-   ```bash
-   npx expo start
-   ```
+Game analysis runs locally using **Llama 3.2 1B Instruct** (SpinQuant-quantized, ~400 MB) via ExecuTorch, Meta's on-device inference runtime, wrapped by `react-native-executorch`.
 
-In the output, you'll find options to open the app in a
+- **First launch**: the model downloads once in the background (~400 MB) and is cached on-device. You'll see a progress percentage the first time you open a game's detail sheet before it's ready.
+- **Every launch after that**: analysis runs fully offline — airplane mode works fine for this part. (Game *data* still needs internet, since scores are live from ESPN.)
+- This replaces the original web prototype's approach, which shelled out to a locally-running [Ollama](https://ollama.com) server on your Mac. That's gone entirely — no server, no "is Ollama running" error states, nothing to keep running on a computer.
+- Quality tradeoff: a 1B on-device model is noticeably shallower than what you'd get from a 3B+ model via Ollama. It's tuned here for short, punchy 3-5 sentence takes rather than deep analysis — see `SYSTEM_PROMPT` in `src/contexts/LocalAIContext.tsx` if you want to change that.
 
-- [development build](https://docs.expo.dev/develop/development-builds/introduction/)
-- [Android emulator](https://docs.expo.dev/workflow/android-studio-emulator/)
-- [iOS simulator](https://docs.expo.dev/workflow/ios-simulator/)
-- [Expo Go](https://expo.dev/go), a limited sandbox for trying out app development with Expo
+### Why this needs a custom dev client, not Expo Go
 
-You can start developing by editing the files inside the **app** directory. This project uses [file-based routing](https://docs.expo.dev/router/introduction).
+`react-native-executorch` is a native module (it embeds ExecuTorch's C++ runtime), so it can't run inside the stock Expo Go app. This project needs a **development build** instead — same DX otherwise (fast refresh, Metro, etc.), just your own compiled app instead of the generic Expo Go container.
 
-## Get a fresh project
-
-When you're ready, run:
+## Running it
 
 ```bash
-npm run reset-project
+npm install
+
+# builds a native dev client and launches it — first run takes a while
+# (full Xcode/Gradle build with the ExecuTorch native library)
+npm run ios       # or: npm run android
+
+# after that first build, for day-to-day work:
+npm start          # then press i / a, or scan the QR code from your dev build
 ```
 
-This command will move the starter code to the **app-example** directory and create a blank **app** directory where you can start developing.
+On first launch: pick the leagues you follow, optionally favorite teams, then browse matchups. Tap a game — the first tap ever will show a model download progress bar; every tap after that runs the analysis on-device in a few seconds. Use the gear icon any time to change leagues/teams.
 
-### Other setup steps
+## Out of scope (same as the web prototype)
 
-- To set up ESLint for linting, run `npx expo lint`, or follow our guide on ["Using ESLint and Prettier"](https://docs.expo.dev/guides/using-eslint/)
-- If you'd like to set up unit testing, follow our guide on ["Unit Testing with Jest"](https://docs.expo.dev/develop/unit-testing/)
-- Learn more about the TypeScript setup in this template in our guide on ["Using TypeScript"](https://docs.expo.dev/guides/typescript/)
-
-## Learn more
-
-To learn more about developing your project with Expo, look at the following resources:
-
-- [Expo documentation](https://docs.expo.dev/): Learn fundamentals, or go into advanced topics with our [guides](https://docs.expo.dev/guides).
-- [Learn Expo tutorial](https://docs.expo.dev/tutorial/introduction/): Follow a step-by-step tutorial where you'll create a project that runs on Android, iOS, and the web.
-
-## Join the community
-
-Join our community of developers creating universal apps.
-
-- [Expo on GitHub](https://github.com/expo/expo): View our open source platform and contribute.
-- [Discord community](https://chat.expo.dev): Chat with Expo users and ask questions.
+User accounts/cloud sync, push notifications, betting odds, historical stats/standings, leagues beyond NFL/NBA/MLB/NHL/EPL, offline support for game *data* (scores are always live), and automated tests.
