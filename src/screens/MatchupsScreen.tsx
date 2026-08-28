@@ -3,11 +3,13 @@ import { useRouter } from 'expo-router';
 import { useCallback, useEffect, useMemo, useState } from 'react';
 import { FlatList, Image, Pressable, RefreshControl, StyleSheet, View } from 'react-native';
 import { Text } from '@/components/AppText';
+import { GlassView } from 'expo-glass-effect';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 
 import { DateStrip } from '@/components/DateStrip';
 import { GameCard } from '@/components/GameCard';
 import { GameDetailModal } from '@/components/GameDetailModal';
+import { GlassIconButton } from '@/components/GlassIconButton';
 import { MotorsportDetailModal } from '@/components/MotorsportDetailModal';
 import { MotorsportEventCard } from '@/components/MotorsportEventCard';
 import { StandingsModal } from '@/components/StandingsModal';
@@ -200,32 +202,23 @@ export function MatchupsScreen({ leagues, state }: { leagues: League[]; state: A
         <Text style={styles.brand}>PocketPundit</Text>
         <View style={styles.topbarActions}>
           {!isMotorsportTab ? (
-            <Pressable
-              onPress={() => setFavoritesOnly((v) => !v)}
+            <GlassIconButton
+              name={favoritesOnly ? 'star' : 'star-outline'}
+              size={20}
+              active={favoritesOnly}
               disabled={!hasFavorites}
-              hitSlop={12}
-              style={[styles.iconBtn, favoritesOnly && styles.iconBtnActive, !hasFavorites && styles.iconBtnDisabled]}
-            >
-              <Ionicons
-                name={favoritesOnly ? 'star' : 'star-outline'}
-                size={20}
-                color={favoritesOnly ? Colors.onAccent : Colors.text}
-              />
-            </Pressable>
+              onPress={() => setFavoritesOnly((v) => !v)}
+              accessibilityLabel="Favorites only"
+            />
           ) : null}
           {canShowStandings ? (
-            <Pressable
+            <GlassIconButton
+              name="list-outline"
               onPress={() => setStandingsOpen(true)}
-              hitSlop={12}
-              style={styles.iconBtn}
               accessibilityLabel="View standings"
-            >
-              <Ionicons name="list-outline" size={22} color={Colors.text} />
-            </Pressable>
+            />
           ) : null}
-          <Pressable onPress={() => router.push('/settings')} hitSlop={12} style={styles.iconBtn}>
-            <Ionicons name="settings-outline" size={22} color={Colors.text} />
-          </Pressable>
+          <GlassIconButton name="settings-outline" onPress={() => router.push('/settings')} accessibilityLabel="Settings" />
         </View>
       </View>
 
@@ -235,28 +228,42 @@ export function MatchupsScreen({ leagues, state }: { leagues: League[]; state: A
           data={tabs}
           keyExtractor={(t) => t.id}
           showsHorizontalScrollIndicator={false}
-          contentContainerStyle={{ gap: Spacing.s2, paddingHorizontal: Spacing.s4 }}
+          // A horizontal FlatList clips to its own measured bounds (that's
+          // fundamental to how scroll views work) — unlike the plain-View
+          // rows elsewhere, giving the pill itself more internal padding
+          // isn't enough here; the FlatList's own box needs extra height
+          // beyond the pill's resting size or its press-bloom still clips.
+          style={styles.tabsList}
+          contentContainerStyle={styles.tabsListContent}
           renderItem={({ item }) => {
             const selected = item.id === activeTab;
             return (
-              <Pressable
-                onPress={() => setActiveTab(item.id)}
-                style={[styles.tab, selected && styles.tabSelected]}
-              >
-                {item.logo ? (
-                  // White backdrop so dark/transparent logo art (several
-                  // leagues have dark navy or black marks) doesn't disappear
-                  // against the pill's own dark background.
-                  <View style={styles.tabLogoBackdrop}>
-                    <Image source={{ uri: item.logo }} style={styles.tabLogo} />
-                  </View>
-                ) : (
-                  // "All" spans every league, so there's no official logo for it.
-                  <Ionicons name="apps-outline" size={20} color={selected ? Colors.onAccent : Colors.text} />
-                )}
-                <Text style={[styles.tabText, selected && styles.tabTextSelected]} numberOfLines={1}>
-                  {item.label}
-                </Text>
+              <Pressable onPress={() => setActiveTab(item.id)}>
+                <GlassView
+                  glassEffectStyle="regular"
+                  isInteractive
+                  tintColor={selected ? Colors.accent : undefined}
+                  style={styles.tab}
+                >
+                  {item.logo ? (
+                    // White backdrop so dark/transparent logo art (several
+                    // leagues have dark navy or black marks) doesn't disappear
+                    // against the pill's own glass background.
+                    <View style={styles.tabLogoBackdrop}>
+                      <Image source={{ uri: item.logo }} style={styles.tabLogo} />
+                    </View>
+                  ) : (
+                    // "All" spans every league, so there's no official logo for it —
+                    // still wrapped in a same-size circle (no white fill, just the
+                    // icon) so this tile's content height matches every other tab's.
+                    <View style={styles.tabIconWrap}>
+                      <Ionicons name="apps-outline" size={20} color={selected ? Colors.onAccent : Colors.text} />
+                    </View>
+                  )}
+                  <Text style={[styles.tabText, selected && styles.tabTextSelected]} numberOfLines={1}>
+                    {item.label}
+                  </Text>
+                </GlassView>
               </Pressable>
             );
           }}
@@ -354,25 +361,26 @@ const styles = StyleSheet.create({
     borderBottomColor: Colors.border,
   },
   brand: { color: Colors.text, fontSize: 18, fontFamily: Fonts.bold, fontWeight: '700', letterSpacing: -0.2 },
-  topbarActions: { flexDirection: 'row', alignItems: 'center', gap: Spacing.s2 },
-  iconBtn: { width: 40, height: 40, alignItems: 'center', justifyContent: 'center', borderRadius: Radius.pill },
-  iconBtnActive: { backgroundColor: Colors.accent },
-  iconBtnDisabled: { opacity: 0.35 },
+  topbarActions: { flexDirection: 'row', alignItems: 'center', gap: Spacing.s3 },
   calendarStrip: { height: 84, overflow: 'hidden' },
-  tabsRow: { paddingVertical: Spacing.s3 },
+  tabsRow: { paddingVertical: Spacing.s2 },
+  // Taller than the pill's ~80px resting height (28px logo circle + gap +
+  // text + 16px vertical padding each side) so the FlatList's own clipping
+  // bounds have slack for the glass press-bloom.
+  tabsList: { height: 96 },
+  tabsListContent: { alignItems: 'center', gap: Spacing.s2, paddingHorizontal: Spacing.s4 },
   tab: {
     width: 68,
-    paddingVertical: Spacing.s2,
+    // More vertical padding than the content strictly needs — the glass
+    // element's own bounds clip its interactive press-bloom, so the pill
+    // needs headroom around its content, not just a tight fit.
+    paddingVertical: Spacing.s3,
     paddingHorizontal: Spacing.s2,
     borderRadius: Radius.md,
-    borderWidth: 1,
-    borderColor: Colors.border,
-    backgroundColor: Colors.surface,
     alignItems: 'center',
     justifyContent: 'center',
     gap: 4,
   },
-  tabSelected: { backgroundColor: Colors.accent, borderColor: Colors.accent },
   tabLogoBackdrop: {
     width: 28,
     height: 28,
@@ -381,6 +389,10 @@ const styles = StyleSheet.create({
     alignItems: 'center',
     justifyContent: 'center',
   },
+  // Same footprint as tabLogoBackdrop (no white fill) so the "All" tile's
+  // content height — and therefore its glass pill's resting size — matches
+  // every logo-based tab exactly.
+  tabIconWrap: { width: 28, height: 28, alignItems: 'center', justifyContent: 'center' },
   tabLogo: { width: 20, height: 20, resizeMode: 'contain' },
   tabText: { color: Colors.text, fontSize: 12, fontFamily: Fonts.semibold, fontWeight: '600' },
   tabTextSelected: { color: Colors.onAccent },

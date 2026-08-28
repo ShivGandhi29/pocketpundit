@@ -1,6 +1,7 @@
 import { useEffect, useState } from 'react';
 import { ActivityIndicator, Image, Pressable, ScrollView, StyleSheet, View } from 'react-native';
 import { Text } from '@/components/AppText';
+import { GlassView } from 'expo-glass-effect';
 
 import { getGameSummary } from '@/services/api';
 import { Colors, Radius, Spacing } from '@/constants/theme';
@@ -158,15 +159,20 @@ function BoxScoreTab({ summary, game }: { summary: GameSummary; game: Game }) {
         {([game.away, game.home] as const).map((t) => {
           const selected = t.id === (teamBox.teamId ?? activeTeamId);
           return (
-            <Pressable
-              key={t.id ?? t.abbreviation}
-              onPress={() => setActiveTeamId(t.id)}
-              style={[styles.teamToggle, selected && styles.teamToggleSelected]}
-            >
-              {t.logo ? <Image source={{ uri: t.logo }} style={styles.teamToggleLogo} /> : null}
-              <Text style={[styles.teamToggleText, selected && styles.teamToggleTextSelected]}>
-                {t.abbreviation}
-              </Text>
+            <Pressable key={t.id ?? t.abbreviation} onPress={() => setActiveTeamId(t.id)} style={styles.teamToggleFlex}>
+              {({ pressed }) => (
+                <GlassView
+                  glassEffectStyle="regular"
+                  isInteractive
+                  tintColor={selected ? Colors.accent : undefined}
+                  style={[styles.teamToggle, pressed && styles.pressed]}
+                >
+                  {t.logo ? <Image source={{ uri: t.logo }} style={styles.teamToggleLogo} /> : null}
+                  <Text style={[styles.teamToggleText, selected && styles.teamToggleTextSelected]}>
+                    {t.abbreviation}
+                  </Text>
+                </GlassView>
+              )}
             </Pressable>
           );
         })}
@@ -283,8 +289,17 @@ export function GameStatsTabs({ game, leagueId }: { game: Game; leagueId: string
         {TABS.map((tab) => {
           const selected = tab.id === activeTab;
           return (
-            <Pressable key={tab.id} onPress={() => setActiveTab(tab.id)} style={[styles.tab, selected && styles.tabSelected]}>
-              <Text style={[styles.tabText, selected && styles.tabTextSelected]}>{tab.label}</Text>
+            <Pressable key={tab.id} onPress={() => setActiveTab(tab.id)}>
+              {({ pressed }) => (
+                <GlassView
+                  glassEffectStyle="regular"
+                  isInteractive
+                  tintColor={selected ? Colors.accent : undefined}
+                  style={[styles.tab, pressed && styles.pressed]}
+                >
+                  <Text style={[styles.tabText, selected && styles.tabTextSelected]}>{tab.label}</Text>
+                </GlassView>
+              )}
             </Pressable>
           );
         })}
@@ -316,28 +331,20 @@ const styles = StyleSheet.create({
     justifyContent: 'center',
     paddingHorizontal: Spacing.s3,
     borderRadius: Radius.pill,
-    borderWidth: 1,
-    borderColor: Colors.border,
-    backgroundColor: Colors.surface,
   },
-  tabSelected: { backgroundColor: Colors.accent, borderColor: Colors.accent },
   tabText: { color: Colors.text, fontSize: 13, fontFamily: Fonts.semibold, fontWeight: '600' },
   tabTextSelected: { color: Colors.onAccent },
   empty: { color: Colors.textMuted, fontSize: 14, textAlign: 'center', marginVertical: Spacing.s4 },
   teamToggleRow: { flexDirection: 'row', gap: Spacing.s2, marginBottom: Spacing.s3 },
+  teamToggleFlex: { flex: 1 },
   teamToggle: {
-    flex: 1,
     flexDirection: 'row',
     alignItems: 'center',
     justifyContent: 'center',
     gap: Spacing.s2,
     minHeight: 44,
     borderRadius: Radius.sm,
-    borderWidth: 1,
-    borderColor: Colors.border,
-    backgroundColor: Colors.surface,
   },
-  teamToggleSelected: { backgroundColor: Colors.surfaceRaised, borderColor: Colors.accent },
   teamToggleLogo: { width: 20, height: 20, resizeMode: 'contain' },
   teamToggleText: { color: Colors.textMuted, fontSize: 14, fontFamily: Fonts.bold, fontWeight: '700' },
   teamToggleTextSelected: { color: Colors.text },
@@ -420,4 +427,5 @@ const styles = StyleSheet.create({
   },
   teamStatsBarAway: { backgroundColor: Colors.textMuted },
   teamStatsBarHome: { backgroundColor: Colors.accent },
+  pressed: { opacity: 0.85 },
 });

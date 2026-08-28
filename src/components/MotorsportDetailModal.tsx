@@ -4,6 +4,7 @@ import { Text } from '@/components/AppText';
 import { SafeAreaProvider, SafeAreaView } from 'react-native-safe-area-context';
 
 import { getMotorsportEventDetail } from '@/services/api';
+import { GlassIconButton } from '@/components/GlassIconButton';
 import { Colors, Radius, Spacing } from '@/constants/theme';
 import { Fonts } from '@/constants/fonts';
 import { formatLocalKickoff } from '@/utils/formatGameTime';
@@ -72,9 +73,7 @@ export function MotorsportDetailModal({
             <Text style={styles.headerTitle} numberOfLines={1}>
               {leagueLabel} · {event?.name ?? ''}
             </Text>
-            <Pressable onPress={onClose} hitSlop={12} style={styles.closeBtn}>
-              <Text style={styles.closeBtnText}>Close</Text>
-            </Pressable>
+            <GlassIconButton name="close" size={18} onPress={onClose} accessibilityLabel="Close" />
           </View>
           <ScrollView contentContainerStyle={styles.scrollContent}>
             {error ? (
@@ -120,8 +119,6 @@ const styles = StyleSheet.create({
     borderBottomColor: Colors.border,
   },
   headerTitle: { flex: 1, color: Colors.text, fontSize: 16, fontFamily: Fonts.bold, fontWeight: '700' },
-  closeBtn: { paddingHorizontal: Spacing.s2, paddingVertical: Spacing.s1 },
-  closeBtnText: { color: Colors.accent, fontFamily: Fonts.semibold, fontWeight: '600', fontSize: 15 },
   scrollContent: { padding: Spacing.s4 },
   error: { color: Colors.live, fontSize: 14, textAlign: 'center', marginVertical: Spacing.s4 },
   empty: { color: Colors.textMuted, fontSize: 14 },

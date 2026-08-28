@@ -2,9 +2,11 @@ import { Ionicons } from '@expo/vector-icons';
 import { useEffect, useMemo, useState } from 'react';
 import { ActivityIndicator, Image, Modal, Pressable, ScrollView, StyleSheet, View } from 'react-native';
 import { Text } from '@/components/AppText';
+import { GlassView } from 'expo-glass-effect';
 import { SafeAreaView } from 'react-native-safe-area-context';
 
 import { getStandings } from '@/services/api';
+import { GlassIconButton } from '@/components/GlassIconButton';
 import { Colors, Radius, Spacing } from '@/constants/theme';
 import { Fonts } from '@/constants/fonts';
 import type { StandingsGroup } from '@/types/pocketpundit';
@@ -89,11 +91,9 @@ export function StandingsModal({
     <Modal visible={visible} animationType="slide" presentationStyle="pageSheet" onRequestClose={onClose}>
       <SafeAreaView style={styles.sheet} edges={['top', 'bottom']}>
         <View style={styles.header}>
-          <Pressable onPress={onClose} hitSlop={12} style={styles.backBtn} accessibilityLabel="Close standings">
-            <Ionicons name="chevron-back" size={24} color={Colors.text} />
-          </Pressable>
+          <GlassIconButton name="chevron-back" size={22} onPress={onClose} accessibilityLabel="Close standings" />
           <Text style={styles.headerTitle}>Standings</Text>
-          <View style={styles.backBtn} />
+          <View style={styles.backBtnSpacer} />
         </View>
 
         {groups && groups.length > 1 ? (
@@ -103,23 +103,33 @@ export function StandingsModal({
             style={styles.filterRow}
             contentContainerStyle={styles.filterRowContent}
           >
-            <Pressable
-              onPress={() => setActiveGroupId(null)}
-              style={[styles.filterPill, activeGroupId === null && styles.filterPillActive]}
-            >
-              <Text style={[styles.filterPillText, activeGroupId === null && styles.filterPillTextActive]}>
-                All Groups
-              </Text>
+            <Pressable onPress={() => setActiveGroupId(null)}>
+              <GlassView
+                glassEffectStyle="regular"
+                isInteractive
+                tintColor={activeGroupId === null ? Colors.accent : undefined}
+                style={styles.filterPill}
+              >
+                <Text style={[styles.filterPillText, activeGroupId === null && styles.filterPillTextActive]}>
+                  All Groups
+                </Text>
+              </GlassView>
             </Pressable>
             {groups.map((g) => (
-              <Pressable
-                key={g.id}
-                onPress={() => setActiveGroupId(g.id)}
-                style={[styles.filterPill, activeGroupId === g.id && styles.filterPillActive]}
-              >
-                <Text style={[styles.filterPillText, activeGroupId === g.id && styles.filterPillTextActive]} numberOfLines={1}>
-                  {g.name}
-                </Text>
+              <Pressable key={g.id} onPress={() => setActiveGroupId(g.id)}>
+                <GlassView
+                  glassEffectStyle="regular"
+                  isInteractive
+                  tintColor={activeGroupId === g.id ? Colors.accent : undefined}
+                  style={styles.filterPill}
+                >
+                  <Text
+                    style={[styles.filterPillText, activeGroupId === g.id && styles.filterPillTextActive]}
+                    numberOfLines={1}
+                  >
+                    {g.name}
+                  </Text>
+                </GlassView>
               </Pressable>
             ))}
           </ScrollView>
@@ -150,21 +160,19 @@ const styles = StyleSheet.create({
     paddingHorizontal: Spacing.s2,
     paddingVertical: Spacing.s2,
   },
-  backBtn: { width: 44, height: 44, alignItems: 'center', justifyContent: 'center' },
+  backBtnSpacer: { width: 48, height: 48 },
   headerTitle: { color: Colors.text, fontSize: 20, fontFamily: Fonts.bold, fontWeight: '700' },
-  filterRow: { flexGrow: 0, height: 44, marginBottom: Spacing.s2 },
+  // Taller than the 36px filter pill so its Liquid Glass press-bloom isn't
+  // clipped by a row sized exactly to the pill's resting height.
+  filterRow: { flexGrow: 0, height: 48, marginBottom: Spacing.s2 },
   filterRowContent: { gap: Spacing.s2, paddingHorizontal: Spacing.s4 },
   filterPill: {
     height: 36,
     paddingHorizontal: Spacing.s3,
     borderRadius: Radius.pill,
-    backgroundColor: Colors.surface,
-    borderWidth: 1,
-    borderColor: Colors.border,
     alignItems: 'center',
     justifyContent: 'center',
   },
-  filterPillActive: { backgroundColor: Colors.accent, borderColor: Colors.accent },
   filterPillText: { color: Colors.text, fontSize: 13, fontFamily: Fonts.semibold, fontWeight: '600' },
   filterPillTextActive: { color: Colors.onAccent },
   scrollContent: { padding: Spacing.s4, paddingTop: 0, gap: Spacing.s4 },

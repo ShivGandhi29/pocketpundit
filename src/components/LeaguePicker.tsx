@@ -2,6 +2,7 @@ import { Ionicons } from '@expo/vector-icons';
 import { useMemo, useState } from 'react';
 import { Image, Pressable, ScrollView, StyleSheet, TextInput, View, useWindowDimensions } from 'react-native';
 import { Text } from '@/components/AppText';
+import { GlassView } from 'expo-glass-effect';
 import { SafeAreaView } from 'react-native-safe-area-context';
 
 import { Colors, Radius, Spacing } from '@/constants/theme';
@@ -9,7 +10,11 @@ import { Fonts } from '@/constants/fonts';
 import type { League } from '@/types/pocketpundit';
 
 const GRID_COLUMNS = 3;
-const GRID_GAP = Spacing.s2;
+// Wider than strictly needed for 3-per-row spacing — each tile's Liquid
+// Glass press-bloom needs slack around it (both from its neighbors and from
+// the ScrollView's own clipping bounds at the row edges), and this gap also
+// shrinks each computed tileWidth below an exact edge-to-edge fit.
+const GRID_GAP = Spacing.s3;
 
 // Fixed display order (not alphabetical) — major North American leagues
 // first since they're the most-searched-for, soccer grouped together since
@@ -53,8 +58,15 @@ export function LeaguePicker({
   // a naive "100/3 %" tile silently wraps to 2-per-row once the gaps eat into
   // the remaining space. Computing the exact pixel width against the window
   // (minus the container's own horizontal padding) guarantees 3 columns fit.
+  // ROW_EDGE_SLACK leaves a little extra room at the leftmost/rightmost
+  // tile's outer edge — the ScrollView's own horizontal bounds are fixed
+  // (only the vertical axis scrolls), so a row computed to exactly fill
+  // that width leaves zero margin for the edge tiles' Liquid Glass
+  // press-bloom before it hits the ScrollView's own clipping bounds.
+  const ROW_EDGE_SLACK = Spacing.s2;
   const { width: windowWidth } = useWindowDimensions();
-  const tileWidth = (windowWidth - Spacing.s4 * 2 - GRID_GAP * (GRID_COLUMNS - 1)) / GRID_COLUMNS;
+  const tileWidth =
+    (windowWidth - Spacing.s4 * 2 - GRID_GAP * (GRID_COLUMNS - 1) - ROW_EDGE_SLACK) / GRID_COLUMNS;
 
   function toggle(id: string) {
     setSelected((prev) => {
@@ -90,7 +102,7 @@ export function LeaguePicker({
       <Text style={styles.title}>Pick your leagues</Text>
       <Text style={styles.subtitle}>Only matchups from these leagues will show up in your feed.</Text>
 
-      <View style={styles.searchRow}>
+      <GlassView glassEffectStyle="regular" style={styles.searchRow}>
         <Ionicons name="search" size={18} color={Colors.textMuted} />
         <TextInput
           value={query}
@@ -106,7 +118,7 @@ export function LeaguePicker({
             <Ionicons name="close-circle" size={18} color={Colors.textMuted} />
           </Pressable>
         ) : null}
-      </View>
+      </GlassView>
 
       <ScrollView contentContainerStyle={styles.scrollContent} keyboardShouldPersistTaps="handled">
         {visibleLeagues.length === 0 ? (
@@ -124,26 +136,29 @@ export function LeaguePicker({
                       onPress={() => toggle(league.id)}
                       accessibilityRole="button"
                       accessibilityState={{ selected: checked }}
-                      style={({ pressed }) => [
-                        styles.tile,
-                        { width: tileWidth },
-                        checked && styles.tileChecked,
-                        pressed && styles.pressed,
-                      ]}
                     >
-                      <View style={styles.tileLogoWrap}>
-                        <View style={styles.tileLogoBackdrop}>
-                          <Image source={{ uri: league.logo }} style={styles.tileLogo} />
-                        </View>
-                        {checked ? (
-                          <View style={styles.tileCheckBadge}>
-                            <Ionicons name="checkmark" size={11} color={Colors.onAccent} />
+                      {({ pressed }) => (
+                        <GlassView
+                          glassEffectStyle="regular"
+                          isInteractive
+                          tintColor={checked ? Colors.accent : undefined}
+                          style={[styles.tile, { width: tileWidth }, pressed && styles.pressed]}
+                        >
+                          <View style={styles.tileLogoWrap}>
+                            <View style={styles.tileLogoBackdrop}>
+                              <Image source={{ uri: league.logo }} style={styles.tileLogo} />
+                            </View>
+                            {checked ? (
+                              <View style={styles.tileCheckBadge}>
+                                <Ionicons name="checkmark" size={11} color={Colors.onAccent} />
+                              </View>
+                            ) : null}
                           </View>
-                        ) : null}
-                      </View>
-                      <Text style={styles.tileLabel} numberOfLines={2}>
-                        {league.label}
-                      </Text>
+                          <Text style={styles.tileLabel} numberOfLines={2}>
+                            {league.label}
+                          </Text>
+                        </GlassView>
+                      )}
                     </Pressable>
                   );
                 })}
@@ -162,19 +177,23 @@ export function LeaguePicker({
             contentContainerStyle={styles.selectedRowContent}
           >
             {selectedLeagues.map((league) => (
-              <Pressable
-                key={league.id}
-                onPress={() => toggle(league.id)}
-                hitSlop={4}
-                style={({ pressed }) => [styles.chip, pressed && styles.pressed]}
-              >
-                <View style={styles.chipLogoBackdrop}>
-                  <Image source={{ uri: league.logo }} style={styles.chipLogo} />
-                </View>
-                <Text style={styles.chipLabel} numberOfLines={1}>
-                  {league.shortLabel}
-                </Text>
-                <Ionicons name="close-circle" size={16} color={Colors.textMuted} />
+              <Pressable key={league.id} onPress={() => toggle(league.id)} hitSlop={4}>
+                {({ pressed }) => (
+                  <GlassView
+                    glassEffectStyle="regular"
+                    isInteractive
+                    tintColor={Colors.accent}
+                    style={[styles.chip, pressed && styles.pressed]}
+                  >
+                    <View style={styles.chipLogoBackdrop}>
+                      <Image source={{ uri: league.logo }} style={styles.chipLogo} />
+                    </View>
+                    <Text style={styles.chipLabel} numberOfLines={1}>
+                      {league.shortLabel}
+                    </Text>
+                    <Ionicons name="close-circle" size={16} color={Colors.textMuted} />
+                  </GlassView>
+                )}
               </Pressable>
             ))}
           </ScrollView>
@@ -208,9 +227,6 @@ const styles = StyleSheet.create({
     gap: Spacing.s2,
     minHeight: 44,
     paddingHorizontal: Spacing.s3,
-    backgroundColor: Colors.surface,
-    borderWidth: 1,
-    borderColor: Colors.border,
     borderRadius: Radius.sm,
     marginBottom: Spacing.s3,
   },
@@ -234,12 +250,8 @@ const styles = StyleSheet.create({
     gap: Spacing.s2,
     paddingVertical: Spacing.s3,
     paddingHorizontal: Spacing.s1,
-    backgroundColor: Colors.surface,
-    borderWidth: 1,
-    borderColor: Colors.border,
     borderRadius: Radius.md,
   },
-  tileChecked: { borderColor: Colors.accent, backgroundColor: Colors.surfaceRaised },
   tileLogoWrap: { width: 44, height: 44 },
   tileLogoBackdrop: {
     width: 44,
@@ -271,7 +283,9 @@ const styles = StyleSheet.create({
   },
   // Explicit height on the ScrollView's own style (not just contentContainerStyle)
   // — otherwise a horizontal scroller stretches to fill this flex-column footer.
-  selectedRow: { height: 44, flexGrow: 0, marginBottom: Spacing.s3 },
+  // Taller than the 44px chip itself so its Liquid Glass press-bloom isn't
+  // clipped by a row sized exactly to the chip's resting height.
+  selectedRow: { height: 52, flexGrow: 0, marginBottom: Spacing.s3 },
   selectedRowContent: { gap: Spacing.s2, paddingRight: Spacing.s1 },
   chip: {
     flexDirection: 'row',
@@ -279,9 +293,6 @@ const styles = StyleSheet.create({
     gap: 6,
     height: 44,
     paddingHorizontal: Spacing.s2,
-    backgroundColor: Colors.surfaceRaised,
-    borderWidth: 1,
-    borderColor: Colors.accent,
     borderRadius: Radius.pill,
   },
   chipLogoBackdrop: {
