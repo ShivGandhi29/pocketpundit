@@ -1,5 +1,6 @@
 import { useEffect, useState } from 'react';
 import { ActivityIndicator, Image, Pressable, ScrollView, StyleSheet, Text, View } from 'react-native';
+import { SafeAreaView } from 'react-native-safe-area-context';
 
 import { getTeams } from '@/services/api';
 import { Colors, Radius, Spacing } from '@/constants/theme';
@@ -84,7 +85,7 @@ export function TeamPicker({
   }
 
   return (
-    <View style={styles.container}>
+    <SafeAreaView style={styles.container} edges={['top', 'bottom']}>
       <ScrollView contentContainerStyle={styles.scrollContent}>
         <Text style={styles.title}>Favorite your teams</Text>
         <Text style={styles.subtitle}>Optional — their games get pinned to the top of your list.</Text>
@@ -103,7 +104,7 @@ export function TeamPicker({
           <Text style={styles.btnPrimaryText}>Done</Text>
         </Pressable>
       </View>
-    </View>
+    </SafeAreaView>
   );
 }
 

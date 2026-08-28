@@ -15,12 +15,13 @@ This is the React Native (Expo) rewrite of the original web prototype at `../Pro
 
 ## On-device AI
 
-Game analysis runs locally using **Llama 3.2 1B Instruct** (SpinQuant-quantized, ~400 MB) via ExecuTorch, Meta's on-device inference runtime, wrapped by `react-native-executorch`.
+Game analysis runs locally using **Llama 3.2 3B Instruct** (SpinQuant-quantized, ~2.4 GB) via ExecuTorch, Meta's on-device inference runtime, wrapped by `react-native-executorch`. The weights are a free download from HuggingFace under Meta's open Llama 3.2 license — no API key, no per-request cost, nothing metered.
 
-- **First launch**: the model downloads once in the background (~400 MB) and is cached on-device. You'll see a progress percentage the first time you open a game's detail sheet before it's ready.
+- **First launch**: the model downloads once in the background (~2.4 GB — worth being on Wi-Fi for this one) and is cached on-device. You'll see a progress percentage the first time you open a game's detail sheet before it's ready.
 - **Every launch after that**: analysis runs fully offline — airplane mode works fine for this part. (Game *data* still needs internet, since scores are live from ESPN.)
 - This replaces the original web prototype's approach, which shelled out to a locally-running [Ollama](https://ollama.com) server on your Mac. That's gone entirely — no server, no "is Ollama running" error states, nothing to keep running on a computer.
-- Quality tradeoff: a 1B on-device model is noticeably shallower than what you'd get from a 3B+ model via Ollama. It's tuned here for short, punchy 3-5 sentence takes rather than deep analysis — see `SYSTEM_PROMPT` in `src/contexts/LocalAIContext.tsx` if you want to change that.
+- The prompt sent to the model includes each team's overall/home/road records and, once a game is live, ESPN's own real-time win-probability figures — grounding the pick in today's numbers rather than the model's training-time knowledge. The system prompt (in `src/contexts/LocalAIContext.tsx`) also explicitly tells the model not to assert roster/player/injury facts it wasn't given, since that's exactly the kind of thing a frozen training cutoff gets wrong.
+- We started with the 1B variant (~400 MB, faster download, less on-device compute) but moved to 3B for materially better reasoning coherence — the 1B model tended to string real numbers together in confused ways. 3B is a bigger download and a bit slower per generation, but noticeably more coherent. If you want the smaller/faster tradeoff back, swap `LLAMA3_2_3B_SPINQUANT` for `LLAMA3_2_1B_SPINQUANT` in that same file.
 
 ### Why this needs a custom dev client, not Expo Go
 

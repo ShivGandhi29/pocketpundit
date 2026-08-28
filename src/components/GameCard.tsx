@@ -1,6 +1,7 @@
 import { Image, Pressable, StyleSheet, Text, View } from 'react-native';
 
 import { Colors, Radius, Spacing } from '@/constants/theme';
+import { formatLocalKickoff } from '@/utils/formatGameTime';
 import type { Game, GameTeam } from '@/types/pocketpundit';
 
 function TeamRow({ team, state }: { team: GameTeam; state: Game['state'] }) {
@@ -26,14 +27,22 @@ export function GameCard({
   onPress: () => void;
 }) {
   const isLive = game.state === 'in';
+  // ESPN's `detail` string is pre-formatted in a fixed timezone (e.g. EDT), which
+  // is only right for the subset of users who happen to live there. For a
+  // scheduled game we instead format the raw UTC timestamp in the device's own
+  // timezone; live/final status text isn't timezone-dependent, so ESPN's string
+  // is used as-is there.
+  const statusText = isLive
+    ? `Live · ${game.detail}`
+    : game.state === 'pre'
+      ? formatLocalKickoff(game.date)
+      : game.detail || 'Scheduled';
   return (
     <Pressable
       onPress={onPress}
       style={({ pressed }) => [styles.card, favorite && styles.cardFavorite, pressed && styles.pressed]}
     >
-      <Text style={[styles.status, isLive && styles.statusLive]}>
-        {isLive ? `Live · ${game.detail}` : game.detail || 'Scheduled'}
-      </Text>
+      <Text style={[styles.status, isLive && styles.statusLive]}>{statusText}</Text>
       <TeamRow team={game.away} state={game.state} />
       <TeamRow team={game.home} state={game.state} />
     </Pressable>

@@ -1,5 +1,6 @@
 import { useState } from 'react';
 import { Pressable, StyleSheet, Text, View } from 'react-native';
+import { SafeAreaView } from 'react-native-safe-area-context';
 
 import { Colors, Radius, Spacing } from '@/constants/theme';
 import type { League } from '@/types/pocketpundit';
@@ -25,7 +26,7 @@ export function LeaguePicker({
   }
 
   return (
-    <View style={styles.container}>
+    <SafeAreaView style={styles.container} edges={['top', 'bottom']}>
       <Text style={styles.title}>Pick your leagues</Text>
       <Text style={styles.subtitle}>Only matchups from these leagues will show up in your feed.</Text>
       <View style={styles.list}>
@@ -54,7 +55,7 @@ export function LeaguePicker({
       >
         <Text style={styles.continueBtnText}>Continue</Text>
       </Pressable>
-    </View>
+    </SafeAreaView>
   );
 }
 

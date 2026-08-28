@@ -22,6 +22,8 @@ export interface GameTeam {
   logo: string | null;
   score: string | null;
   record: string | null;
+  homeRecord: string | null;
+  roadRecord: string | null;
   winner: boolean;
 }
 
@@ -38,6 +40,8 @@ export interface Game {
   away: GameTeam;
   venue: string | null;
   leagueId: string;
+  /** ESPN's own live win-probability model, present only once a game is in progress. */
+  liveWinProbability: { home: number; away: number } | null;
 }
 
 export interface AppState {
@@ -46,12 +50,14 @@ export interface AppState {
   favoriteTeams: Record<string, FavoriteTeam>;
 }
 
-export interface AnalyzeResult {
-  analysis: string;
-  model: string;
-}
-
-export interface ApiErrorPayload {
-  error?: string;
-  detail?: string;
+export interface ScheduleGame {
+  id: string;
+  date: string;
+  isHome: boolean;
+  opponent: { id: string; name: string; abbreviation: string | null; logo: string | null };
+  state: GameState;
+  detail: string;
+  teamScore: string | null;
+  opponentScore: string | null;
+  result: 'W' | 'L' | 'T' | null;
 }

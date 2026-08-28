@@ -85,6 +85,7 @@ export function MatchupsScreen({ leagues, state }: { leagues: League[]; state: A
             return (
               <Pressable
                 onPress={() => setActiveTab(item.id)}
+                hitSlop={4}
                 style={[styles.tab, selected && styles.tabSelected]}
               >
                 <Text style={[styles.tabText, selected && styles.tabTextSelected]}>{item.label}</Text>
@@ -104,7 +105,7 @@ export function MatchupsScreen({ leagues, state }: { leagues: League[]; state: A
         <FlatList
           data={games}
           keyExtractor={(g) => g.id}
-          contentContainerStyle={styles.list}
+          contentContainerStyle={[styles.list, { paddingBottom: Spacing.s4 + insets.bottom }]}
           refreshControl={<RefreshControl refreshing={refreshing} onRefresh={onRefresh} tintColor={Colors.accent} />}
           renderItem={({ item }) => (
             <GameCard
@@ -118,6 +119,7 @@ export function MatchupsScreen({ leagues, state }: { leagues: League[]; state: A
 
       <GameDetailModal
         game={openGame}
+        leagueId={openGame?.leagueId ?? ''}
         leagueLabel={openGame ? leagueLabel(openGame.leagueId) : ''}
         onClose={() => setOpenGame(null)}
       />

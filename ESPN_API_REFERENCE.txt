@@ -1,0 +1,239 @@
+ESPN PUBLIC API REFERENCE
+=========================
+Everything below was verified live against the API on 2026-08-28 while building
+PocketPundit. This is ESPN's free, keyless, UNOFFICIAL public API - there's no
+published spec, no versioning guarantee, and no rate-limit documentation.
+Field shapes have been observed to change without notice, so treat this as a
+snapshot, not a contract.
+
+IMPORTANT (learned the hard way in this project):
+  Node's built-in `https`/`http` modules get a 403 from ESPN's Akamai edge,
+  which appears to fingerprint and block Node's default TLS client. Node's
+  built-in `fetch` (undici) is NOT blocked. If you're calling this from a
+  Node script, use `fetch`, not `https.get`. From a browser you'll hit CORS
+  (ESPN sends no CORS headers on these endpoints); from native mobile code
+  (iOS/Android, not web) CORS doesn't apply at all.
+
+BASE URL
+--------
+  https://site.api.espn.com/apis/site/v2/sports/{sport}/{league}/{resource}
+
+  One exception: standings live under a different, "site"-less path:
+  https://site.api.espn.com/apis/v2/sports/{sport}/{league}/standings
+
+SPORT / LEAGUE PATH SEGMENTS
+-----------------------------
+  American football, NFL      -> sport=football   league=nfl
+  Basketball, NBA              -> sport=basketball league=nba
+  Baseball, MLB                 -> sport=baseball   league=mlb
+  Hockey, NHL                   -> sport=hockey      league=nhl
+  Soccer, English Premier Lg    -> sport=soccer       league=eng.1
+  (Other soccer leagues follow the same pattern, e.g. esp.1 = La Liga,
+  ger.1 = Bundesliga, uefa.champions = Champions League - not verified here,
+  going by ESPN's known slug convention.)
+
+
+================================================================================
+ENDPOINTS ALREADY USED IN THIS APP (src/services/api.ts)
+================================================================================
+
+1) SCOREBOARD - today's/a date's games for a league
+   GET /{sport}/{league}/scoreboard
+
+   Query params (all verified):
+     dates=YYYYMMDD     filter to one specific date
+     week=N             filter to a specific week (American sports)
+     seasontype=N        1=preseason, 2=regular season, 3=postseason (NFL/NBA/MLB/NHL)
+
+   Response shape (relevant parts):
+     events[]
+       id, date (ISO UTC), shortName, name
+       status.type.state        "pre" | "in" | "post"
+       status.type.detail       ESPN's own pre-formatted string, FIXED TIMEZONE
+                                 (e.g. "Fri, August 28th at 7:30 PM EDT") - do not
+                                 trust this for "local time" display, reformat
+                                 the raw `date` instead
+       status.type.completed    bool
+       competitions[0].venue.fullName
+       competitions[0].situation.lastPlay.probability
+                                 LIVE win-probability model (homeWinPercentage /
+                                 awayWinPercentage / tiePercentage), only present
+                                 once a game is in progress - no pregame equivalent
+                                 on this endpoint (see summary endpoint for that)
+       competitions[0].competitors[]  (2 entries: homeAway = "home" | "away")
+         team.id, team.displayName, team.abbreviation, team.logo
+         score                  plain string here, e.g. "21"
+         winner                 bool
+         records[]              array of {name, type, summary}; type is one of
+                                 "total" (overall), "home", "road" - useful for
+                                 grounding an AI prediction in real form rather
+                                 than just the overall record
+
+2) TEAMS - full team list for a league
+   GET /{sport}/{league}/teams?limit=100
+   (limit matters - default page size is small; 100 comfortably covers every
+   league we use)
+
+   Response shape:
+     sports[0].leagues[0].teams[].team
+       id, displayName, abbreviation, color, logos[] ({href, rel: ["default"|"dark"|...]})
+
+3) TEAM SCHEDULE - one team's full game list
+   GET /{sport}/{league}/teams/{teamId}/schedule
+   GET /{sport}/{league}/teams/{teamId}/schedule?seasontype=2
+
+   Without seasontype, this DEFAULTS TO PRESEASON for the American leagues
+   (only 2-3 games) - pass seasontype=2 for the regular season, which is what
+   most users mean by "schedule". EPL has no such split (one continuous
+   league season) so no seasontype param is needed/useful there - it was
+   tested with 1/2/3 and none produced a fuller list than omitting it, though
+   very early in a season ESPN may simply not have published many fixtures yet.
+
+   Response shape:
+     season / requestedSeason    {year, type, name} - note soccer's `type` is a
+                                  large arbitrary competition id, not 1/2/3
+     events[]
+       date, shortName
+       competitions[0].status.type.{state,detail,completed}
+       competitions[0].competitors[]
+         team.id, team.displayName, team.abbreviation, team.logos[]
+         homeAway, winner
+         score                  OBJECT here, not a string: {value, displayValue}
+                                 (differs from the scoreboard endpoint's score
+                                 field, which is a plain string - don't assume
+                                 the same shape across endpoints)
+         record                 season-to-date record object (present here,
+                                 absent on the scoreboard endpoint's competitors)
+
+
+================================================================================
+ENDPOINTS AVAILABLE BUT NOT YET USED IN THIS APP
+================================================================================
+
+4) TEAM DETAIL - single team, richer than the list endpoint
+   GET /{sport}/{league}/teams/{teamId}
+
+   Adds over the list endpoint: record (current season), groups (division/
+   conference), franchise info, links, and nextEvent[] (the team's next
+   scheduled game, inline - handy if you only need "what's next" without a
+   full schedule fetch).
+
+5) ROSTER - a team's full player list
+   GET /{sport}/{league}/teams/{teamId}/roster
+
+   Response shape:
+     coach[]                     {id, firstName, lastName, experience}
+     athletes[]                  grouped by position bucket, each group is
+                                  {position, items[]}
+       items[]
+         id, fullName, displayName, shortName
+         jersey, position {name, displayName, abbreviation}
+         height, displayHeight, weight, displayWeight, age, dateOfBirth
+         college, birthPlace, headshot
+         injuries[]               PLAYER-LEVEL injury status, if any
+         experience, contract, status
+
+   This is the one endpoint that could plug the "on-device model doesn't
+   know about recent trades/injuries" gap PocketPundit's README calls out -
+   fetching current roster + injuries and feeding relevant bits into the AI
+   prompt would ground it in facts closer to game day, without needing the
+   model itself to know anything current.
+
+6) STANDINGS - full league table
+   GET https://site.api.espn.com/apis/v2/sports/{sport}/{league}/standings
+   (note: different path than everything else - no "/site/" segment)
+
+   Response shape:
+     children[]                  one per conference/group
+       name, abbreviation, isConference
+       standings.entries[]
+         team {id, displayName, abbreviation, logos}
+         stats[]                 flat array of {name, value, displayValue},
+                                  ~21 stats per team including: wins, losses,
+                                  ties, winPercent, gamesBehind, streak,
+                                  pointsFor, pointsAgainst, pointDifferential,
+                                  divisionWins/Losses/Ties, playoffSeed
+
+7) NEWS - headlines, league-wide or team-filtered
+   GET /{sport}/{league}/news
+   GET /{sport}/{league}/news?team={teamId}
+
+   Response shape:
+     articles[]
+       headline, description, published, lastModified
+       images[]                  {url, width, height, credit}
+       links[]                   web article links (no full article body here)
+
+8) EVENT SUMMARY / BOXSCORE - the deep one, everything about a single game
+   GET /{sport}/{league}/summary?event={eventId}
+   (eventId is the same id as scoreboard's events[].id)
+
+   This is by far the richest endpoint. Top-level keys observed:
+     boxscore
+       teams[]                   per-team stat totals {team, statistics, homeAway}
+       players[]                 per-team, per-player box score stat lines
+     leaders[]                   per-team statistical leaders for this game
+                                  (passing/rushing/receiving leaders etc.,
+                                  varies by sport)
+     injuries[]                  per-team injury report AS OF THIS GAME
+     winprobability[]            full win-probability TIME SERIES across the
+                                  whole game - one entry per play:
+                                  {homeWinPercentage, tiePercentage, playId}
+                                  (the scoreboard endpoint only exposes the
+                                  latest point of this same series)
+     odds[]                      betting odds/spread, WHEN AVAILABLE - was
+                                  empty/null on every game checked while
+                                  building this (preseason games, at least);
+                                  don't rely on this being populated
+     pickcenter                  related consensus-pick data, same caveat as odds
+     gameInfo                    venue, attendance, officials
+     broadcasts                  TV/streaming info
+     scoringPlays[]               chronological list of scoring plays
+     drives                      (American football) drive-by-drive data
+     standings                   snapshot of both teams' current standing
+     news                        related articles for this matchup
+     header                      game/team summary block used to build ESPN's
+                                  own header UI
+
+9) ATHLETE DETAIL - single player
+   GET https://site.api.espn.com/apis/common/v3/sports/{sport}/{league}/athletes/{athleteId}
+   (note: different host path again - "apis/common/v3", not "apis/site/v2")
+
+   Confirmed to respond (200); shape not explored beyond that - expect
+   biographical detail plus career stats given the pattern of other athlete-
+   related ESPN endpoints.
+
+
+================================================================================
+QUERY PARAMETERS SEEN ACROSS ENDPOINTS
+================================================================================
+  limit=N            page size (teams endpoint defaults small - always pass
+                      limit=100 or similar for a "give me everything" list)
+  dates=YYYYMMDD      scoreboard: filter to one date
+  week=N              scoreboard: filter to one week (American sports)
+  seasontype=N        scoreboard / team schedule: 1=pre, 2=regular, 3=post
+                       (American sports only - see the team-schedule section
+                       above for soccer's different behavior)
+  event={eventId}     summary: which game to fetch
+  team={teamId}        news: filter headlines to one team
+
+
+================================================================================
+NOTES / GOTCHAS
+================================================================================
+  - No API key, no auth, no documented rate limit - but this is not an
+    official/supported API, so don't build anything that would break loudly
+    if ESPN throttles or changes it without notice.
+  - Score fields are NOT consistently typed across endpoints: a plain string
+    on /scoreboard, an object ({value, displayValue}) on /teams/{id}/schedule.
+    Always check the actual shape for a given endpoint rather than assuming.
+  - ESPN's pre-formatted date/time strings (status.type.detail etc.) are in a
+    FIXED timezone (typically US Eastern), not the request's or device's
+    timezone - reformat the raw `date` (ISO UTC) client-side for correct
+    local-time display, exactly as PocketPundit's src/utils/formatGameTime.ts
+    does.
+  - Live win-probability is on both /scoreboard (latest point only) and
+    /summary (the full time series across the game) - use whichever
+    granularity you need.
+  - Standings and athlete-detail live under different base paths than
+    everything else (see sections 6 and 9) - easy to typo.

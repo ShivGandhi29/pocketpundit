@@ -22,6 +22,7 @@ export default function RootLayout() {
         >
           <Stack.Screen name="index" />
           <Stack.Screen name="settings" options={{ presentation: 'modal', headerShown: false }} />
+          <Stack.Screen name="team/[teamId]" />
         </Stack>
       </LocalAIProvider>
     </SafeAreaProvider>
