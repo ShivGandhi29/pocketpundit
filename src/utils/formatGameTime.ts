@@ -30,6 +30,19 @@ export function formatLocalKickoff(dateIso: string): string {
   }
 }
 
+const TIME_ONLY = new Intl.DateTimeFormat(undefined, { hour: 'numeric', minute: '2-digit' });
+const WEEKDAY_DATE = new Intl.DateTimeFormat(undefined, { weekday: 'short', month: '2-digit', day: '2-digit' });
+
+/** Just the kickoff time in the device's own timezone, e.g. "6:30 PM". */
+export function formatKickoffTime(dateIso: string): string {
+  return TIME_ONLY.format(new Date(dateIso));
+}
+
+/** Just the kickoff date in the device's own timezone, e.g. "Fri, 08/28". */
+export function formatKickoffDate(dateIso: string): string {
+  return WEEKDAY_DATE.format(new Date(dateIso));
+}
+
 /** YYYYMMDD in local calendar terms, for ESPN's scoreboard `dates` param. */
 export function toEspnDateParam(date: Date): string {
   const y = date.getFullYear();

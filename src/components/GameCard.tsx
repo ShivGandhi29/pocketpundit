@@ -1,20 +1,42 @@
+import { Ionicons } from '@expo/vector-icons';
 import { Image, Pressable, StyleSheet, Text, View } from 'react-native';
 
 import { Colors, Radius, Spacing } from '@/constants/theme';
-import { formatLocalKickoff } from '@/utils/formatGameTime';
+import { formatKickoffDate, formatKickoffTime } from '@/utils/formatGameTime';
 import type { Game, GameTeam } from '@/types/pocketpundit';
 
-function TeamRow({ team, state }: { team: GameTeam; state: Game['state'] }) {
+function TeamColumn({ team, showScore }: { team: GameTeam; showScore: boolean }) {
   return (
-    <View style={styles.row}>
+    <View style={styles.teamCol}>
       {team.logo ? <Image source={{ uri: team.logo }} style={styles.logo} /> : <View style={styles.logo} />}
-      <Text style={styles.name} numberOfLines={1}>
-        {team.name}
+      <Text style={styles.abbr} numberOfLines={1}>
+        {team.abbreviation ?? team.name}
       </Text>
-      <Text style={styles.record}>{team.record || ''}</Text>
-      <Text style={styles.score}>{state === 'pre' ? '' : (team.score ?? '')}</Text>
+      {team.record ? (
+        <Text style={styles.record} numberOfLines={1}>
+          {team.record}
+        </Text>
+      ) : null}
+      {showScore ? (
+        <Text style={[styles.teamScore, team.winner && styles.teamScoreWinner]}>{team.score ?? '-'}</Text>
+      ) : null}
     </View>
   );
+}
+
+function CenterBadge({ state }: { state: Game['state'] }) {
+  if (state === 'in') {
+    return (
+      <View style={styles.liveBadge}>
+        <Ionicons name="play" size={10} color={Colors.onAccent} />
+        <Text style={styles.liveBadgeText}>LIVE</Text>
+      </View>
+    );
+  }
+  if (state === 'post') {
+    return <Text style={styles.centerMuted}>FINAL</Text>;
+  }
+  return <Text style={styles.centerMuted}>VS</Text>;
 }
 
 export function GameCard({
@@ -27,24 +49,31 @@ export function GameCard({
   onPress: () => void;
 }) {
   const isLive = game.state === 'in';
-  // ESPN's `detail` string is pre-formatted in a fixed timezone (e.g. EDT), which
-  // is only right for the subset of users who happen to live there. For a
-  // scheduled game we instead format the raw UTC timestamp in the device's own
-  // timezone; live/final status text isn't timezone-dependent, so ESPN's string
-  // is used as-is there.
-  const statusText = isLive
-    ? `Live · ${game.detail}`
-    : game.state === 'pre'
-      ? formatLocalKickoff(game.date)
-      : game.detail || 'Scheduled';
+  const isPre = game.state === 'pre';
+
   return (
     <Pressable
       onPress={onPress}
       style={({ pressed }) => [styles.card, favorite && styles.cardFavorite, pressed && styles.pressed]}
     >
-      <Text style={[styles.status, isLive && styles.statusLive]}>{statusText}</Text>
-      <TeamRow team={game.away} state={game.state} />
-      <TeamRow team={game.home} state={game.state} />
+      {isPre ? (
+        <>
+          <Text style={styles.headlineTime}>{formatKickoffTime(game.date)}</Text>
+          <Text style={styles.headlineDate}>{formatKickoffDate(game.date)}</Text>
+        </>
+      ) : (
+        <Text style={[styles.headlineStatus, isLive && styles.headlineStatusLive]} numberOfLines={1}>
+          {isLive ? `Live · ${game.detail}` : game.detail || 'Final'}
+        </Text>
+      )}
+
+      <View style={styles.row}>
+        <TeamColumn team={game.away} showScore={!isPre} />
+        <View style={styles.center}>
+          <CenterBadge state={game.state} />
+        </View>
+        <TeamColumn team={game.home} showScore={!isPre} />
+      </View>
     </Pressable>
   );
 }
@@ -55,27 +84,39 @@ const styles = StyleSheet.create({
     borderWidth: 1,
     borderColor: Colors.border,
     borderRadius: Radius.md,
-    padding: Spacing.s3,
+    paddingVertical: Spacing.s3,
+    paddingHorizontal: Spacing.s3,
+    alignItems: 'center',
   },
   cardFavorite: { borderColor: Colors.accentStrong },
   pressed: { opacity: 0.85 },
-  status: {
-    fontSize: 12,
-    fontWeight: '700',
-    letterSpacing: 0.5,
-    textTransform: 'uppercase',
+  headlineTime: { color: Colors.text, fontSize: 22, fontWeight: '800', letterSpacing: -0.3 },
+  headlineDate: { color: Colors.textMuted, fontSize: 12, fontWeight: '600', marginTop: 2, marginBottom: Spacing.s2 },
+  headlineStatus: {
     color: Colors.textMuted,
+    fontSize: 13,
+    fontWeight: '700',
     marginBottom: Spacing.s2,
+    textAlign: 'center',
   },
-  statusLive: { color: Colors.live },
-  row: {
+  headlineStatusLive: { color: Colors.live },
+  row: { flexDirection: 'row', alignItems: 'center', width: '100%' },
+  teamCol: { flex: 1, alignItems: 'center', gap: 2 },
+  logo: { width: 36, height: 36, resizeMode: 'contain', marginBottom: 2 },
+  abbr: { color: Colors.text, fontSize: 13, fontWeight: '800', letterSpacing: 0.3 },
+  record: { color: Colors.textMuted, fontSize: 11 },
+  teamScore: { color: Colors.text, fontSize: 20, fontWeight: '800', fontVariant: ['tabular-nums'], marginTop: 2 },
+  teamScoreWinner: { color: Colors.accent },
+  center: { width: 72, alignItems: 'center', justifyContent: 'center' },
+  centerMuted: { color: Colors.textMuted, fontSize: 12, fontWeight: '700', letterSpacing: 0.5 },
+  liveBadge: {
     flexDirection: 'row',
     alignItems: 'center',
-    gap: Spacing.s2,
-    paddingVertical: Spacing.s1,
+    gap: 4,
+    backgroundColor: Colors.live,
+    borderRadius: Radius.pill,
+    paddingHorizontal: Spacing.s2,
+    paddingVertical: 4,
   },
-  logo: { width: 24, height: 24, resizeMode: 'contain' },
-  name: { flex: 1, color: Colors.text, fontSize: 15, fontWeight: '600' },
-  record: { color: Colors.textMuted, fontSize: 13 },
-  score: { color: Colors.text, fontSize: 18, fontWeight: '700', minWidth: 28, textAlign: 'right' },
+  liveBadgeText: { color: Colors.onAccent, fontSize: 11, fontWeight: '800', letterSpacing: 0.5 },
 });
