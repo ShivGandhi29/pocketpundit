@@ -74,6 +74,10 @@ export function TeamPicker({
   onFinish: (favorites: Record<string, FavoriteTeam>) => void;
 }) {
   const [favorites, setFavorites] = useState<Map<string, FavoriteTeam>>(new Map(Object.entries(initialFavorites)));
+  // Motorsport leagues (drivers, not teams) have nothing to show here — the
+  // caller should skip this screen entirely when only motorsport is selected,
+  // but filter defensively since this component may be reused elsewhere.
+  const teamLeagues = leagues.filter((l) => l.kind === 'team');
 
   function toggle(team: FavoriteTeam) {
     setFavorites((prev) => {
@@ -89,7 +93,7 @@ export function TeamPicker({
       <ScrollView contentContainerStyle={styles.scrollContent}>
         <Text style={styles.title}>Favorite your teams</Text>
         <Text style={styles.subtitle}>Optional — their games get pinned to the top of your list.</Text>
-        {leagues.map((league) => (
+        {teamLeagues.map((league) => (
           <TeamGroup key={league.id} league={league} favorites={favorites} onToggle={toggle} />
         ))}
       </ScrollView>

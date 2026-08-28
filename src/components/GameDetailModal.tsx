@@ -1,30 +1,13 @@
-import { Ionicons } from '@expo/vector-icons';
 import { useRouter } from 'expo-router';
-import { useEffect, useState } from 'react';
-import { ActivityIndicator, Image, Modal, Pressable, ScrollView, StyleSheet, Text, View } from 'react-native';
+import { useEffect, useRef, useState } from 'react';
+import { ActivityIndicator, Modal, Pressable, ScrollView, StyleSheet, Text, View } from 'react-native';
 import { SafeAreaProvider, SafeAreaView } from 'react-native-safe-area-context';
 
+import { GameStatsTabs } from '@/components/GameStatsTabs';
+import { ScoreBug } from '@/components/ScoreBug';
 import { useLocalAI } from '@/contexts/LocalAIContext';
 import { Colors, Radius, Spacing } from '@/constants/theme';
 import type { Game, GameTeam } from '@/types/pocketpundit';
-
-function MatchupRow({ team, state, onPress }: { team: GameTeam; state: Game['state']; onPress?: () => void }) {
-  return (
-    <Pressable
-      onPress={onPress}
-      disabled={!onPress}
-      style={({ pressed }) => [styles.matchupRow, pressed && onPress && styles.matchupRowPressed]}
-    >
-      {team.logo ? <Image source={{ uri: team.logo }} style={styles.logo} /> : <View style={styles.logo} />}
-      <Text style={styles.teamName} numberOfLines={1}>
-        {team.name}
-      </Text>
-      <Text style={styles.teamRecord}>{team.record || ''}</Text>
-      <Text style={styles.teamScore}>{state === 'pre' ? '' : (team.score ?? '')}</Text>
-      {onPress ? <Ionicons name="chevron-forward" size={16} color={Colors.textMuted} /> : null}
-    </Pressable>
-  );
-}
 
 export function GameDetailModal({
   game,
@@ -39,12 +22,28 @@ export function GameDetailModal({
 }) {
   const router = useRouter();
   const ai = useLocalAI();
-  const [status, setStatus] = useState<'loading' | 'done' | 'error'>('loading');
+  const [status, setStatus] = useState<'idle' | 'loading' | 'done' | 'error'>('idle');
   const [text, setText] = useState('');
+  // The Modal stays mounted between games (just hidden), so a slow in-flight
+  // analysis for a since-closed game could otherwise resolve and overwrite
+  // whatever game is open by then. This tracks which game a run belongs to
+  // so a stale result is dropped instead of applied.
+  const requestGameId = useRef<string | null>(null);
 
+  // Analysis is opt-in (button press), not automatic on open — each tap of a
+  // game used to trigger a 3B-model generation plus four ESPN fetches
+  // (standings/injuries x2) even for a quick glance at the score bug or box
+  // score. Resetting to idle here just clears stale state from a
+  // previously-viewed game; it does not itself trigger a run.
   useEffect(() => {
-    if (!game || !ai.isReady) return;
-    let cancelled = false;
+    setStatus('idle');
+    setText('');
+  }, [game?.id]);
+
+  function runAnalysis() {
+    if (!game) return;
+    const gameId = game.id;
+    requestGameId.current = gameId;
     setStatus('loading');
     setText('');
     ai.analyzeMatchup({
@@ -56,21 +55,16 @@ export function GameDetailModal({
       liveWinProbability: game.liveWinProbability,
     })
       .then((result) => {
-        if (cancelled) return;
+        if (requestGameId.current !== gameId) return;
         setStatus('done');
         setText(result || 'No analysis returned.');
       })
       .catch((err: unknown) => {
-        if (cancelled) return;
+        if (requestGameId.current !== gameId) return;
         setStatus('error');
         setText(`Analysis failed: ${err instanceof Error ? err.message : String(err)}`);
       });
-    return () => {
-      cancelled = true;
-    };
-    // ai.analyzeMatchup is stable per model-ready state; game/leagueId/leagueLabel drive re-analysis.
-    // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [game, leagueId, leagueLabel, ai.isReady]);
+  }
 
   function viewSchedule(team: GameTeam) {
     if (!team.id) return;
@@ -99,33 +93,62 @@ export function GameDetailModal({
           </View>
           <ScrollView contentContainerStyle={styles.scrollContent}>
             {game ? (
-              <View style={styles.matchup}>
-                <MatchupRow team={game.away} state={game.state} onPress={() => viewSchedule(game.away)} />
-                <MatchupRow team={game.home} state={game.state} onPress={() => viewSchedule(game.home)} />
-                <Text style={styles.matchupHint}>Tap a team to see its schedule</Text>
-              </View>
-            ) : null}
-            <Text style={styles.analysisHeading}>✦ On-device AI analysis</Text>
+              <>
+                <ScoreBug
+                  game={game}
+                  onPressAway={() => viewSchedule(game.away)}
+                  onPressHome={() => viewSchedule(game.home)}
+                />
+                <Text style={styles.scoreBugHint}>Tap a team to see its schedule</Text>
 
-            {ai.error ? (
-              <Text style={styles.analysisError}>Local AI unavailable: {ai.error}</Text>
-            ) : !ai.isReady ? (
-              <View style={styles.loadingRow}>
-                <ActivityIndicator color={Colors.accent} />
-                <Text style={styles.loadingText}>
-                  {ai.downloadProgress > 0
-                    ? `Downloading on-device model… ${Math.round(ai.downloadProgress * 100)}%`
-                    : 'Preparing on-device model…'}
-                </Text>
-              </View>
-            ) : status === 'loading' ? (
-              <View style={styles.loadingRow}>
-                <ActivityIndicator color={Colors.accent} />
-                <Text style={styles.loadingText}>Analyzing matchup on-device…</Text>
-              </View>
-            ) : (
-              <Text style={[styles.analysisBody, status === 'error' && styles.analysisError]}>{text}</Text>
-            )}
+                {/* A prediction is only meaningful before/during a game — once
+                    it's final there's nothing left to forecast, so this whole
+                    section (and the model download/injuries/standings fetches
+                    behind it) is skipped entirely rather than shown disabled. */}
+                {game.state !== 'post' ? (
+                  <>
+                    <Text style={styles.analysisHeading}>✦ On-device AI analysis</Text>
+                    {ai.error ? (
+                      <Text style={styles.analysisError}>Local AI unavailable: {ai.error}</Text>
+                    ) : !ai.isReady ? (
+                      <View style={styles.loadingRow}>
+                        <ActivityIndicator color={Colors.accent} />
+                        <Text style={styles.loadingText}>
+                          {ai.downloadProgress > 0
+                            ? `Downloading on-device model… ${Math.round(ai.downloadProgress * 100)}%`
+                            : 'Preparing on-device model…'}
+                        </Text>
+                      </View>
+                    ) : status === 'idle' ? (
+                      <Pressable
+                        onPress={runAnalysis}
+                        style={({ pressed }) => [styles.analyzeBtn, pressed && styles.analyzeBtnPressed]}
+                      >
+                        <Text style={styles.analyzeBtnText}>Analyze this matchup</Text>
+                      </Pressable>
+                    ) : status === 'loading' ? (
+                      <View style={styles.loadingRow}>
+                        <ActivityIndicator color={Colors.accent} />
+                        <Text style={styles.loadingText}>Analyzing matchup on-device…</Text>
+                      </View>
+                    ) : (
+                      <>
+                        <Text style={[styles.analysisBody, status === 'error' && styles.analysisError]}>{text}</Text>
+                        <Pressable onPress={runAnalysis} hitSlop={8} style={styles.reanalyzeBtn}>
+                          <Text style={styles.reanalyzeBtnText}>
+                            {status === 'error' ? 'Try again' : 'Re-analyze'}
+                          </Text>
+                        </Pressable>
+                      </>
+                    )}
+                  </>
+                ) : null}
+
+                <View style={styles.statsSection}>
+                  <GameStatsTabs game={game} leagueId={leagueId} />
+                </View>
+              </>
+            ) : null}
           </ScrollView>
         </SafeAreaView>
       </SafeAreaProvider>
@@ -147,30 +170,27 @@ const styles = StyleSheet.create({
   closeBtn: { paddingHorizontal: Spacing.s2, paddingVertical: Spacing.s1 },
   closeBtnText: { color: Colors.accent, fontWeight: '600', fontSize: 15 },
   scrollContent: { padding: Spacing.s4 },
-  matchup: {
-    backgroundColor: Colors.surfaceRaised,
-    borderRadius: Radius.md,
-    padding: Spacing.s3,
-    gap: Spacing.s2,
-    marginBottom: Spacing.s4,
-  },
-  matchupRow: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    gap: Spacing.s2,
-    minHeight: 44,
-    paddingVertical: Spacing.s1,
-    borderRadius: Radius.sm,
-  },
-  matchupRowPressed: { backgroundColor: Colors.border },
-  matchupHint: { color: Colors.textMuted, fontSize: 12, textAlign: 'center', marginTop: Spacing.s1 },
-  logo: { width: 28, height: 28, resizeMode: 'contain' },
-  teamName: { flex: 1, color: Colors.text, fontSize: 15, fontWeight: '600' },
-  teamRecord: { color: Colors.textMuted, fontSize: 13 },
-  teamScore: { color: Colors.text, fontSize: 18, fontWeight: '700', minWidth: 28, textAlign: 'right' },
+  scoreBugHint: { color: Colors.textMuted, fontSize: 12, textAlign: 'center', marginTop: -Spacing.s3, marginBottom: Spacing.s4 },
   analysisHeading: { color: Colors.accent, fontSize: 15, fontWeight: '700', marginBottom: Spacing.s2 },
   loadingRow: { flexDirection: 'row', alignItems: 'center', gap: Spacing.s2, minHeight: 60 },
   loadingText: { color: Colors.textMuted, fontSize: 15 },
   analysisBody: { color: Colors.text, fontSize: 15, lineHeight: 22 },
   analysisError: { color: Colors.live },
+  analyzeBtn: {
+    minHeight: 48,
+    borderRadius: Radius.sm,
+    backgroundColor: Colors.accent,
+    alignItems: 'center',
+    justifyContent: 'center',
+  },
+  analyzeBtnPressed: { opacity: 0.85 },
+  analyzeBtnText: { color: Colors.onAccent, fontWeight: '700', fontSize: 15 },
+  reanalyzeBtn: { alignSelf: 'flex-start', minHeight: 44, justifyContent: 'center', marginTop: Spacing.s2 },
+  reanalyzeBtnText: { color: Colors.accent, fontWeight: '600', fontSize: 13 },
+  statsSection: {
+    marginTop: Spacing.s5,
+    paddingTop: Spacing.s4,
+    borderTopWidth: 1,
+    borderTopColor: Colors.border,
+  },
 });

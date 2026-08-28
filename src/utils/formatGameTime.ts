@@ -29,3 +29,30 @@ export function formatLocalKickoff(dateIso: string): string {
     return WITHOUT_ZONE.format(date);
   }
 }
+
+/** YYYYMMDD in local calendar terms, for ESPN's scoreboard `dates` param. */
+export function toEspnDateParam(date: Date): string {
+  const y = date.getFullYear();
+  const m = String(date.getMonth() + 1).padStart(2, '0');
+  const d = String(date.getDate()).padStart(2, '0');
+  return `${y}${m}${d}`;
+}
+
+/** Local-midnight Date for a given day offset from today (0 = today). */
+export function dateWithOffset(days: number): Date {
+  const date = new Date();
+  date.setHours(0, 0, 0, 0);
+  date.setDate(date.getDate() + days);
+  return date;
+}
+
+/** A new Date offset by `days` from the given date (negative goes backward). */
+export function addDays(date: Date, days: number): Date {
+  const next = new Date(date);
+  next.setDate(next.getDate() + days);
+  return next;
+}
+
+export function isSameLocalDay(a: Date, b: Date): boolean {
+  return a.getFullYear() === b.getFullYear() && a.getMonth() === b.getMonth() && a.getDate() === b.getDate();
+}
