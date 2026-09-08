@@ -12,6 +12,7 @@ import { GameDetailModal } from '@/components/GameDetailModal';
 import { GlassIconButton } from '@/components/GlassIconButton';
 import { MotorsportDetailModal } from '@/components/MotorsportDetailModal';
 import { MotorsportEventCard } from '@/components/MotorsportEventCard';
+import { MotorsportStandingsModal } from '@/components/MotorsportStandingsModal';
 import { GamesListSkeleton } from '@/components/Skeleton';
 import { StandingsModal } from '@/components/StandingsModal';
 import { WeekStrip } from '@/components/WeekStrip';
@@ -25,7 +26,7 @@ import {
   isSameLocalDay,
   toEspnDateParam,
 } from '@/utils/formatGameTime';
-import type { AppState, Game, League, MotorsportEvent, WeekCalendar } from '@/types/pocketpundit';
+import type { AppState, Game, League, MotorsportEvent, MotorsportSchedule, WeekCalendar } from '@/types/pocketpundit';
 
 // How many days ahead the "Upcoming" agenda looks — long enough to be
 // useful, short enough not to fan out into dozens of parallel ESPN requests
@@ -71,7 +72,7 @@ export function MatchupsScreen({ leagues, state }: { leagues: League[]; state: A
   // re-rendering unaffected cards — an inline `() => setOpenGame(item)` per
   // card would give memo a new function identity every render and defeat it.
   const handleOpenGame = useCallback((game: Game) => setOpenGame(game), []);
-  const [motorsportEvents, setMotorsportEvents] = useState<MotorsportEvent[] | null>(null);
+  const [motorsportEvents, setMotorsportEvents] = useState<MotorsportSchedule | null>(null);
   const [motorsportError, setMotorsportError] = useState<string | null>(null);
   const [openMotorsportEvent, setOpenMotorsportEvent] = useState<MotorsportEvent | null>(null);
   const handleOpenMotorsportEvent = useCallback((event: MotorsportEvent) => setOpenMotorsportEvent(event), []);
@@ -80,10 +81,32 @@ export function MatchupsScreen({ leagues, state }: { leagues: League[]; state: A
   const isNflWeekTab = activeTab === 'nfl';
   const activeLeague = leagues.find((l) => l.id === activeTab);
   const isMotorsportTab = activeLeague?.kind === 'motorsport';
-  // Standings are a per-league table — "All" spans multiple leagues at once
-  // and motorsport doesn't have a team standings concept, so the button only
-  // makes sense once one specific team-sport league is the active tab.
+  // Standings are a per-league table — "All" spans multiple leagues at once,
+  // so the button only makes sense once one specific league is active.
+  // Motorsport gets its own driver/constructor standings modal (different
+  // shape entirely — no team-vs-team table), not the team-sport one.
   const canShowStandings = activeTab !== 'all' && activeLeague?.kind === 'team';
+  const canShowMotorsportStandings = activeTab !== 'all' && isMotorsportTab;
+
+  // The very next race gets its own "Next Race" section (rendered as one
+  // oversized featured card — see MotorsportEventCard's `featured` prop),
+  // the rest of the season's remaining rounds sit under "Upcoming", and
+  // anything already run groups under "Completed" rather than being left
+  // under no heading at all.
+  const motorsportSections = useMemo(() => {
+    if (!motorsportEvents) return [];
+    const sections: { title: string; featured: boolean; data: MotorsportEvent[] }[] = [];
+    if (motorsportEvents.upcoming.length > 0) {
+      sections.push({ title: 'Next Race', featured: true, data: [motorsportEvents.upcoming[0]] });
+      if (motorsportEvents.upcoming.length > 1) {
+        sections.push({ title: 'Upcoming', featured: false, data: motorsportEvents.upcoming.slice(1) });
+      }
+    }
+    if (motorsportEvents.past.length > 0) {
+      sections.push({ title: 'Completed', featured: false, data: motorsportEvents.past });
+    }
+    return sections;
+  }, [motorsportEvents]);
 
   useEffect(() => {
     if (!isNflWeekTab || nflCalendar) return;
@@ -277,13 +300,13 @@ export function MatchupsScreen({ leagues, state }: { leagues: League[]; state: A
     getMotorsportSchedule(activeTab)
       .then((events) => {
         if (cancelled) return;
-        const sorted = [...events].sort((a, b) => new Date(a.date).getTime() - new Date(b.date).getTime());
-        setMotorsportEvents(sorted);
+        // Already ordered upcoming-first by getMotorsportSchedule.
+        setMotorsportEvents(events);
       })
       .catch((err) => {
         if (cancelled) return;
         setMotorsportError(err instanceof Error ? err.message : 'Could not load schedule');
-        setMotorsportEvents([]);
+        setMotorsportEvents({ upcoming: [], past: [] });
       });
     return () => {
       cancelled = true;
@@ -295,7 +318,6 @@ export function MatchupsScreen({ leagues, state }: { leagues: League[]; state: A
     if (isMotorsportTab) {
       try {
         const events = await getMotorsportSchedule(activeTab);
-        events.sort((a, b) => new Date(a.date).getTime() - new Date(b.date).getTime());
         setMotorsportEvents(events);
         setMotorsportError(null);
       } catch (err) {
@@ -342,7 +364,7 @@ export function MatchupsScreen({ leagues, state }: { leagues: League[]; state: A
               accessibilityLabel="Favorites only"
             />
           ) : null}
-          {canShowStandings ? (
+          {canShowStandings || canShowMotorsportStandings ? (
             <GlassIconButton
               name="list-outline"
               onPress={() => setStandingsOpen(true)}
@@ -437,19 +459,25 @@ export function MatchupsScreen({ leagues, state }: { leagues: League[]; state: A
             <Ionicons name="cloud-offline-outline" size={28} color={Colors.textMuted} />
             <Text style={styles.empty}>Could not load schedule ({motorsportError}).</Text>
           </View>
-        ) : motorsportEvents.length === 0 ? (
+        ) : motorsportEvents.upcoming.length === 0 && motorsportEvents.past.length === 0 ? (
           <View style={styles.emptyState}>
             <Ionicons name="flag-outline" size={28} color={Colors.textMuted} />
             <Text style={styles.empty}>No races scheduled.</Text>
           </View>
         ) : (
-          <FlatList
-            data={motorsportEvents}
+          <SectionList
+            sections={motorsportSections}
             keyExtractor={(e) => e.id}
             contentContainerStyle={[styles.list, { paddingBottom: Spacing.s4 + insets.bottom }]}
             refreshControl={<RefreshControl refreshing={refreshing} onRefresh={onRefresh} tintColor={Colors.accent} />}
-            renderItem={({ item }) => (
-              <MotorsportEventCard event={item} onOpen={handleOpenMotorsportEvent} />
+            stickySectionHeadersEnabled={false}
+            renderSectionHeader={({ section }) => (
+              <Text style={styles.sectionHeader} accessibilityRole="header">
+                {section.title}
+              </Text>
+            )}
+            renderItem={({ item, section }) => (
+              <MotorsportEventCard event={item} onOpen={handleOpenMotorsportEvent} featured={section.featured} />
             )}
           />
         )
@@ -531,6 +559,13 @@ export function MatchupsScreen({ leagues, state }: { leagues: League[]; state: A
 
       <StandingsModal
         visible={standingsOpen && canShowStandings}
+        leagueId={activeTab}
+        leagueLabel={leagueLabel(activeTab)}
+        onClose={() => setStandingsOpen(false)}
+      />
+
+      <MotorsportStandingsModal
+        visible={standingsOpen && canShowMotorsportStandings}
         leagueId={activeTab}
         leagueLabel={leagueLabel(activeTab)}
         onClose={() => setStandingsOpen(false)}

@@ -4,6 +4,10 @@ import type {
   League,
   MotorsportEvent,
   MotorsportEventDetail,
+  MotorsportResult,
+  MotorsportSchedule,
+  MotorsportStandingEntry,
+  MotorsportStandings,
   ScheduleGame,
   SeasonStage,
   StandingsGroup,
@@ -634,9 +638,23 @@ function extractEventId(ref: unknown): string {
   return match?.[1] ?? '';
 }
 
-function simplifyMotorsportSchedule(payload: any): MotorsportEvent[] {
+// The calendar comes back in pure season order (round 1 first), which buries
+// the upcoming race under however many rounds have already happened this
+// season. Splitting into upcoming (soonest first — index 0 is "the next
+// race") and past (most recent first, since that's the one still fresh in
+// mind) lets the UI build a "Next Race" / "Upcoming" / "Completed" sectioned
+// list without re-deriving which bucket each event belongs to itself.
+function splitMotorsportEvents(events: MotorsportEvent[]): MotorsportSchedule {
+  const now = Date.now();
+  const isPast = (e: MotorsportEvent) => new Date(e.endDate).getTime() < now;
+  const upcoming = events.filter((e) => !isPast(e)).sort((a, b) => new Date(a.date).getTime() - new Date(b.date).getTime());
+  const past = events.filter(isPast).sort((a, b) => new Date(b.date).getTime() - new Date(a.date).getTime());
+  return { upcoming, past };
+}
+
+function simplifyMotorsportSchedule(payload: any): MotorsportSchedule {
   const calendar = payload?.leagues?.[0]?.calendar ?? [];
-  return calendar
+  const events = calendar
     .map((entry: any) => ({
       id: extractEventId(entry.event?.$ref),
       name: entry.label,
@@ -644,6 +662,7 @@ function simplifyMotorsportSchedule(payload: any): MotorsportEvent[] {
       endDate: entry.endDate,
     }))
     .filter((e: MotorsportEvent) => e.id);
+  return splitMotorsportEvents(events);
 }
 
 // F1 reports each session with type.abbreviation (FP1/FP2/FP3/Qual/Race);
@@ -664,38 +683,54 @@ function sessionLabel(comp: any, totalSessions: number, sport: string): string {
   return sport === 'golf' ? 'Leaderboard' : 'Race';
 }
 
+// Every session ESPN reports — not just the race — carries its own
+// competitor order (practice classification, the qualifying grid, the race
+// result). Live-checked against F1's Italian GP: FP1/FP2/FP3/Qual/Race each
+// had 22 competitors of their own. Surfacing all of them, not just the
+// race's, is what actually makes qualifying/practice worth tapping into.
+function sessionResults(comp: any): MotorsportResult[] {
+  const state = comp?.status?.type?.state ?? 'pre';
+  // Shown for both 'in' and 'post' (not just 'post') — a live leaderboard
+  // mid-session is exactly what a viewer checks for, and it's equally valid
+  // for a motorsport session already underway.
+  if (state === 'pre') return [];
+  return (comp.competitors ?? [])
+    .slice()
+    .sort((a: any, b: any) => (a.order ?? 99) - (b.order ?? 99))
+    .map((c: any) => ({
+      position: c.order,
+      driverName: c.athlete?.displayName ?? 'Unknown',
+      countryFlag: c.athlete?.flag?.href ?? null,
+      // Golf competitors don't carry a `winner` flag the way motorsport ones
+      // do — leaderboard position 1 stands in for it.
+      winner: c.winner ?? c.order === 1,
+    }));
+}
+
 function simplifyMotorsportDetail(payload: any, sport: string): MotorsportEventDetail {
-  const comps = payload?.events?.[0]?.competitions ?? [];
+  const event = payload?.events?.[0];
+  const comps = event?.competitions ?? [];
   const sessions = comps.map((c: any) => ({
     id: c.id,
     label: sessionLabel(c, comps.length, sport),
     date: c.date,
     state: c.status?.type?.state ?? 'pre',
     detail: c.status?.type?.shortDetail || c.status?.type?.detail || '',
+    results: sessionResults(c),
   }));
   const raceComp = comps.find((c: any) => isRaceSession(c, comps.length));
   const raceState = raceComp?.status?.type?.state ?? 'pre';
-  // Shown for both 'in' and 'post' (not just 'post') — a live leaderboard
-  // mid-round is exactly what a golf viewer checks for, and it's equally
-  // valid for a motorsport race already underway.
-  const results =
-    raceState !== 'pre'
-      ? (raceComp.competitors ?? [])
-          .slice()
-          .sort((a: any, b: any) => (a.order ?? 99) - (b.order ?? 99))
-          .map((c: any) => ({
-            position: c.order,
-            driverName: c.athlete?.displayName ?? 'Unknown',
-            countryFlag: c.athlete?.flag?.href ?? null,
-            // Golf competitors don't carry a `winner` flag the way
-            // motorsport ones do — leaderboard position 1 stands in for it.
-            winner: c.winner ?? c.order === 1,
-          }))
-      : [];
-  return { sessions, results, state: raceState };
+  const circuitName = event?.circuit?.fullName;
+  const address = event?.circuit?.address;
+  const location = [address?.city, address?.country].filter(Boolean).join(', ');
+  return {
+    sessions,
+    circuit: circuitName ? { name: circuitName, location } : null,
+    state: raceState,
+  };
 }
 
-export async function getMotorsportSchedule(leagueId: string): Promise<MotorsportEvent[]> {
+export async function getMotorsportSchedule(leagueId: string): Promise<MotorsportSchedule> {
   const { sport, league } = leaguePath(leagueId);
   const payload = await fetchEspn<any>(`https://site.api.espn.com/apis/site/v2/sports/${sport}/${league}/scoreboard`);
   return simplifyMotorsportSchedule(payload);
@@ -715,4 +750,48 @@ export async function getMotorsportEventDetail(
     `https://site.api.espn.com/apis/site/v2/sports/${sport}/${league}/scoreboard?dates=${dateParam}`
   );
   return simplifyMotorsportDetail(payload, sport);
+}
+
+// Live-checked shape: F1's standings response has two `children` — a
+// "Driver" group and a lowercase-abbreviated "constructor" group. IndyCar
+// and NASCAR each returned exactly one child (abbreviation "overall") with
+// no separate constructor championship. Every entry's `stats` array carries
+// a `rank` stat and a points stat named either "championshipPts" (drivers)
+// or "points" (constructors) — never both spellings on the same entry, so
+// checking both by name covers every series without per-league branching.
+function statValue(stats: any[], name: string): number | null {
+  const stat = stats?.find((s) => s.name === name);
+  return typeof stat?.value === 'number' ? stat.value : null;
+}
+
+function parseStandingEntries(entries: any[], subjectKey: 'athlete' | 'team'): MotorsportStandingEntry[] {
+  return entries
+    .map((e) => {
+      const subject = e[subjectKey];
+      if (!subject) return null;
+      const stats = e.stats ?? [];
+      const rank = statValue(stats, 'rank');
+      const points = statValue(stats, 'championshipPts') ?? statValue(stats, 'points');
+      return {
+        rank: rank ?? 0,
+        name: subject.displayName ?? subject.name ?? 'Unknown',
+        countryFlag: subjectKey === 'athlete' ? (subject.flag?.href ?? null) : null,
+        teamColor: subjectKey === 'team' && subject.color ? `#${subject.color}` : null,
+        points: points ?? 0,
+      };
+    })
+    .filter((e): e is MotorsportStandingEntry => e !== null)
+    .sort((a, b) => a.rank - b.rank);
+}
+
+export async function getMotorsportStandings(leagueId: string): Promise<MotorsportStandings> {
+  const { sport, league } = leaguePath(leagueId);
+  const payload = await fetchEspn<any>(`https://site.api.espn.com/apis/v2/sports/${sport}/${league}/standings`);
+  const children = payload?.children ?? [];
+  const constructorGroup = children.find((c: any) => c.abbreviation?.toLowerCase() === 'constructor');
+  const driverGroup = children.find((c: any) => c !== constructorGroup) ?? children[0];
+  return {
+    drivers: driverGroup ? parseStandingEntries(driverGroup.standings?.entries ?? [], 'athlete') : [],
+    constructors: constructorGroup ? parseStandingEntries(constructorGroup.standings?.entries ?? [], 'team') : [],
+  };
 }

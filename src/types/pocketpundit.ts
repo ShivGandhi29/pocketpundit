@@ -71,13 +71,11 @@ export interface MotorsportEvent {
   endDate: string;
 }
 
-export interface MotorsportSession {
-  id: string;
-  /** "FP1", "Qual", "Race", etc. — falls back to "Race" for series that report a single un-typed session. */
-  label: string;
-  date: string;
-  state: GameState;
-  detail: string;
+export interface MotorsportSchedule {
+  /** Not yet finished, soonest first — `upcoming[0]` is "the next race." */
+  upcoming: MotorsportEvent[];
+  /** Already finished, most recent first. */
+  past: MotorsportEvent[];
 }
 
 export interface MotorsportResult {
@@ -87,11 +85,48 @@ export interface MotorsportResult {
   winner: boolean;
 }
 
+export interface MotorsportSession {
+  id: string;
+  /** "FP1", "Qual", "Race", etc. — falls back to "Race" for series that report a single un-typed session. */
+  label: string;
+  date: string;
+  state: GameState;
+  detail: string;
+  /** This session's own finishing/classification order — empty until it's
+   * run. Every session ESPN reports (practice, qualifying, race) carries its
+   * own competitor order, not just the race. */
+  results: MotorsportResult[];
+}
+
+export interface MotorsportCircuit {
+  name: string;
+  /** "Monza, Italy" — city and country joined, when both are known. */
+  location: string;
+}
+
 export interface MotorsportEventDetail {
   sessions: MotorsportSession[];
-  /** Empty until the race session is final. */
-  results: MotorsportResult[];
+  circuit: MotorsportCircuit | null;
+  /** The race session's own state, kept for the overall event's "is this
+   * weekend done" styling. */
   state: GameState;
+}
+
+export interface MotorsportStandingEntry {
+  rank: number;
+  name: string;
+  /** Drivers only — a constructor entry has no single nationality. */
+  countryFlag: string | null;
+  /** Constructors only — ESPN reports each team's brand color as a hex string. */
+  teamColor: string | null;
+  points: number;
+}
+
+export interface MotorsportStandings {
+  drivers: MotorsportStandingEntry[];
+  /** Empty for series with no separate teams'/manufacturers' championship
+   * (e.g. IndyCar, NASCAR) — only F1 reported both when checked live. */
+  constructors: MotorsportStandingEntry[];
 }
 
 export type SeasonStage = 'Preseason' | 'Regular season' | 'Postseason';

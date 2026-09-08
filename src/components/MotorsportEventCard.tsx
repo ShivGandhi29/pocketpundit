@@ -1,65 +1,126 @@
-import { Ionicons } from '@expo/vector-icons';
+import { LinearGradient } from 'expo-linear-gradient';
 import { memo } from 'react';
-import { Pressable, StyleSheet, View } from 'react-native';
+import { Pressable, StyleSheet } from 'react-native';
 import { Text } from '@/components/AppText';
 
 import { Colors, Radius, Spacing } from '@/constants/theme';
 import { Fonts } from '@/constants/fonts';
-import { formatLocalKickoff } from '@/utils/formatGameTime';
+import { formatKickoffTime } from '@/utils/formatGameTime';
+import { teamGradientColor } from '@/utils/teamGradient';
 import type { MotorsportEvent } from '@/types/pocketpundit';
 
 const RANGE_FORMAT = new Intl.DateTimeFormat(undefined, { month: 'short', day: 'numeric' });
+
+type WeekendState = 'pre' | 'live' | 'past';
+
+function weekendState(event: MotorsportEvent): WeekendState {
+  const now = Date.now();
+  const start = new Date(event.date).getTime();
+  const end = new Date(event.endDate).getTime();
+  if (now < start) return 'pre';
+  if (now <= end) return 'live';
+  return 'past';
+}
 
 // Memoized with a stable `onOpen` callback expected from the caller (see
 // MatchupsScreen's useCallback) — same reasoning as GameCard.
 export const MotorsportEventCard = memo(function MotorsportEventCard({
   event,
   onOpen,
+  featured = false,
 }: {
   event: MotorsportEvent;
   onOpen: (event: MotorsportEvent) => void;
+  /** The "Next Race" card — roughly double-sized so it reads as the one
+   * thing on this screen you actually came here for. */
+  featured?: boolean;
 }) {
-  const isPast = new Date(event.endDate).getTime() < Date.now();
+  const state = weekendState(event);
   const dateRange = `${RANGE_FORMAT.format(new Date(event.date))} – ${RANGE_FORMAT.format(new Date(event.endDate))}`;
-  const label = `${event.name}, ${isPast ? 'completed' : `${dateRange}, starts ${formatLocalKickoff(event.date)}`}`;
+  const label = `${event.name}, ${
+    state === 'past' ? `completed, ${dateRange}` : state === 'live' ? `live now, ${dateRange}` : `${dateRange}, starts ${formatKickoffTime(event.date)}`
+  }`;
+
+  // Same idea as GameCard's two-team gradient split — a color wash fading
+  // into the card's own dark surface — but with one subject instead of two,
+  // since a race weekend doesn't have "sides." Upcoming glows accent green,
+  // live glows red (this app's live-state color everywhere else), and a
+  // completed weekend stays flat so it visually recedes behind what's next.
+  const washColor = state === 'live' ? Colors.live : state === 'pre' ? Colors.accent : null;
+  const gradientColors: [string, string] = washColor
+    ? [teamGradientColor(washColor), Colors.surface]
+    : [Colors.surface, Colors.surface];
+
   return (
     <Pressable
       onPress={() => onOpen(event)}
       accessibilityRole="button"
       accessibilityLabel={label}
-      style={({ pressed }) => [styles.card, pressed && styles.pressed]}
+      style={({ pressed }) => pressed && styles.pressed}
     >
-      <View style={styles.info}>
-        <Text style={[styles.status, isPast && styles.statusPast]}>{isPast ? 'Completed' : dateRange}</Text>
-        <Text style={styles.name} numberOfLines={2}>
+      <LinearGradient
+        colors={gradientColors}
+        start={{ x: 0, y: 0 }}
+        end={{ x: 1, y: 0 }}
+        style={[styles.card, featured && styles.cardFeatured]}
+      >
+        {state === 'pre' ? (
+          <>
+            <Text style={[styles.headlineTime, featured && styles.headlineTimeFeatured]}>{formatKickoffTime(event.date)}</Text>
+            <Text style={[styles.headlineDate, featured && styles.headlineDateFeatured]}>{dateRange}</Text>
+          </>
+        ) : (
+          <Text
+            style={[styles.headlineStatus, featured && styles.headlineStatusFeatured, state === 'live' && styles.headlineStatusLive]}
+            numberOfLines={1}
+          >
+            {state === 'live' ? `Live · ${dateRange}` : `Completed · ${dateRange}`}
+          </Text>
+        )}
+        <Text style={[styles.name, featured && styles.nameFeatured]} numberOfLines={2}>
           {event.name}
         </Text>
-        {!isPast ? <Text style={styles.detail}>Starts {formatLocalKickoff(event.date)}</Text> : null}
-      </View>
-      <Ionicons name="chevron-forward" size={18} color={Colors.textMuted} />
+      </LinearGradient>
     </Pressable>
   );
 });
 
 const styles = StyleSheet.create({
   card: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    gap: Spacing.s2,
-    backgroundColor: Colors.surface,
-    borderWidth: 1,
-    borderColor: Colors.border,
     borderRadius: Radius.md,
-    padding: Spacing.s3,
+    paddingVertical: Spacing.s3,
+    paddingHorizontal: Spacing.s3,
+    alignItems: 'center',
+  },
+  // Roughly double the resting card's footprint — bigger padding plus
+  // bigger type, not a literal 2x on every metric (a doubled caption would
+  // look broken, not premium).
+  cardFeatured: {
+    paddingVertical: Spacing.s6,
+    paddingHorizontal: Spacing.s5,
   },
   pressed: { opacity: 0.85 },
-  info: { flex: 1, gap: 2 },
-  status: {
-    fontSize: 12,
-    fontFamily: Fonts.bold, fontWeight: '700',
+  headlineTime: { color: Colors.text, fontSize: 22, fontFamily: Fonts.extrabold, fontWeight: '800', letterSpacing: -0.3 },
+  headlineTimeFeatured: { fontSize: 40 },
+  headlineDate: {
     color: Colors.textMuted,
+    fontSize: 12,
+    fontFamily: Fonts.semibold,
+    fontWeight: '600',
+    marginTop: 2,
+    marginBottom: Spacing.s2,
   },
-  statusPast: { color: Colors.accent },
-  name: { color: Colors.text, fontSize: 16, fontFamily: Fonts.bold, fontWeight: '700' },
-  detail: { color: Colors.textMuted, fontSize: 12 },
+  headlineDateFeatured: { fontSize: 15, marginBottom: Spacing.s3 },
+  headlineStatus: {
+    color: Colors.textMuted,
+    fontSize: 13,
+    fontFamily: Fonts.bold,
+    fontWeight: '700',
+    marginBottom: Spacing.s2,
+    textAlign: 'center',
+  },
+  headlineStatusFeatured: { fontSize: 20, marginBottom: Spacing.s3 },
+  headlineStatusLive: { color: Colors.live },
+  name: { color: Colors.text, fontSize: 16, fontFamily: Fonts.bold, fontWeight: '700', textAlign: 'center' },
+  nameFeatured: { fontSize: 26 },
 });
