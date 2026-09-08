@@ -38,7 +38,14 @@ export function GlassIconButton({
     // stays visually the same size, just inset with more room around it),
     // not to pad something outside it. The native isInteractive animation
     // already supplies press feedback, so no manual opacity-on-press either.
-    <Pressable onPress={onPress} disabled={disabled} hitSlop={hitSlop} accessibilityLabel={accessibilityLabel}>
+    <Pressable
+      onPress={onPress}
+      disabled={disabled}
+      hitSlop={hitSlop}
+      accessibilityRole="button"
+      accessibilityLabel={accessibilityLabel}
+      accessibilityState={{ disabled, selected: active }}
+    >
       <GlassView
         glassEffectStyle="regular"
         isInteractive

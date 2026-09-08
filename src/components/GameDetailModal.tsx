@@ -87,7 +87,7 @@ export function GameDetailModal({
       <SafeAreaProvider>
         <SafeAreaView style={styles.sheet} edges={['top', 'bottom']}>
           <View style={styles.header}>
-            <Text style={styles.headerTitle} numberOfLines={1}>
+            <Text style={styles.headerTitle} numberOfLines={1} accessibilityRole="header">
               {leagueLabel} · {game?.shortName || ''}
             </Text>
             <GlassIconButton name="close" size={18} onPress={onClose} accessibilityLabel="Close" />
@@ -108,12 +108,14 @@ export function GameDetailModal({
                     behind it) is skipped entirely rather than shown disabled. */}
                 {game.state !== 'post' ? (
                   <>
-                    <Text style={styles.analysisHeading}>✦ On-device AI analysis</Text>
+                    <Text style={styles.analysisHeading} accessibilityRole="header">
+                      ✦ On-device AI analysis
+                    </Text>
                     {ai.error ? (
                       <Text style={styles.analysisError}>Local AI unavailable: {ai.error}</Text>
                     ) : !ai.isReady ? (
                       <View style={styles.loadingRow}>
-                        <ActivityIndicator color={Colors.accent} />
+                        <ActivityIndicator color={Colors.accent} accessibilityLabel="Preparing on-device model" />
                         <Text style={styles.loadingText}>
                           {ai.downloadProgress > 0
                             ? `Downloading on-device model… ${Math.round(ai.downloadProgress * 100)}%`
@@ -123,19 +125,34 @@ export function GameDetailModal({
                     ) : status === 'idle' ? (
                       <Pressable
                         onPress={runAnalysis}
+                        accessibilityRole="button"
+                        accessibilityLabel="Analyze this matchup"
                         style={({ pressed }) => [styles.analyzeBtn, pressed && styles.analyzeBtnPressed]}
                       >
                         <Text style={styles.analyzeBtnText}>Analyze this matchup</Text>
                       </Pressable>
                     ) : status === 'loading' ? (
                       <View style={styles.loadingRow}>
-                        <ActivityIndicator color={Colors.accent} />
+                        <ActivityIndicator color={Colors.accent} accessibilityLabel="Analyzing matchup" />
                         <Text style={styles.loadingText}>Analyzing matchup on-device…</Text>
                       </View>
                     ) : (
                       <>
                         <Text style={[styles.analysisBody, status === 'error' && styles.analysisError]}>{text}</Text>
-                        <Pressable onPress={runAnalysis} hitSlop={8} style={styles.reanalyzeBtn}>
+                        {status === 'done' ? (
+                          // Design Guideline — Generative AI > Transparency: "clearly
+                          // communicate that AI-generated content may contain errors."
+                          <Text style={styles.analysisDisclaimer}>
+                            AI-generated on-device — may be wrong, use as one input among others.
+                          </Text>
+                        ) : null}
+                        <Pressable
+                          onPress={runAnalysis}
+                          hitSlop={8}
+                          accessibilityRole="button"
+                          accessibilityLabel={status === 'error' ? 'Try again' : 'Re-analyze'}
+                          style={styles.reanalyzeBtn}
+                        >
                           <Text style={styles.reanalyzeBtnText}>
                             {status === 'error' ? 'Try again' : 'Re-analyze'}
                           </Text>
@@ -174,6 +191,7 @@ const styles = StyleSheet.create({
   loadingRow: { flexDirection: 'row', alignItems: 'center', gap: Spacing.s2, minHeight: 60 },
   loadingText: { color: Colors.textMuted, fontSize: 15 },
   analysisBody: { color: Colors.text, fontSize: 15, lineHeight: 22 },
+  analysisDisclaimer: { color: Colors.textMuted, fontSize: 12, marginTop: Spacing.s2 },
   analysisError: { color: Colors.live },
   analyzeBtn: {
     minHeight: 48,

@@ -39,7 +39,9 @@ export function DateStrip({
           accessibilityLabel="Previous week"
           hitSlop={8}
         />
-        <Text style={styles.monthLabel}>{MONTH_YEAR.format(selectedDate)}</Text>
+        <Text style={styles.monthLabel} accessibilityRole="header">
+          {MONTH_YEAR.format(selectedDate)}
+        </Text>
         <GlassIconButton
           name="chevron-forward"
           size={20}
@@ -65,16 +67,28 @@ export function DateStrip({
         {weekDays.map((day) => {
           const selected = isSameLocalDay(day, selectedDate);
           const isToday = isSameLocalDay(day, today);
+          const label = `${WEEKDAY.format(day)} ${day.getDate()}${isToday ? ', today' : ''}`;
           return (
-            <Pressable key={day.toISOString()} onPress={() => onSelectDate(day)} style={styles.dayCol}>
-              <Text style={styles.weekday}>{WEEKDAY.format(day).toUpperCase()}</Text>
+            <Pressable
+              key={day.toISOString()}
+              onPress={() => onSelectDate(day)}
+              accessibilityRole="button"
+              accessibilityLabel={label}
+              accessibilityState={{ selected }}
+              style={styles.dayCol}
+            >
+              <Text style={styles.weekday} maxFontSizeMultiplier={1.3}>
+                {WEEKDAY.format(day).toUpperCase()}
+              </Text>
               <GlassView
                 glassEffectStyle="regular"
                 isInteractive
                 tintColor={selected ? Colors.accent : undefined}
                 style={styles.dayCircle}
               >
-                <Text style={[styles.dayNumber, selected && styles.textSelected]}>{day.getDate()}</Text>
+                <Text style={[styles.dayNumber, selected && styles.textSelected]} maxFontSizeMultiplier={1.3}>
+                  {day.getDate()}
+                </Text>
               </GlassView>
               {/* Fixed-size View with toggled opacity, not a toggled text
                   glyph — a dot swapped in via text content measures a

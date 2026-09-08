@@ -15,7 +15,9 @@ function GroupTable({ group }: { group: StandingsGroup }) {
   return (
     <View style={styles.groupCard}>
       <View style={styles.groupHeaderRow}>
-        <Text style={styles.groupName}>{group.name}</Text>
+        <Text style={styles.groupName} accessibilityRole="header">
+          {group.name}
+        </Text>
         <Text style={styles.groupMeta}>{group.rows.length} teams</Text>
       </View>
 
@@ -92,7 +94,9 @@ export function StandingsModal({
       <SafeAreaView style={styles.sheet} edges={['top', 'bottom']}>
         <View style={styles.header}>
           <GlassIconButton name="chevron-back" size={22} onPress={onClose} accessibilityLabel="Close standings" />
-          <Text style={styles.headerTitle}>Standings</Text>
+          <Text style={styles.headerTitle} accessibilityRole="header">
+            Standings
+          </Text>
           <View style={styles.backBtnSpacer} />
         </View>
 
@@ -103,7 +107,12 @@ export function StandingsModal({
             style={styles.filterRow}
             contentContainerStyle={styles.filterRowContent}
           >
-            <Pressable onPress={() => setActiveGroupId(null)}>
+            <Pressable
+              onPress={() => setActiveGroupId(null)}
+              accessibilityRole="button"
+              accessibilityLabel="All Groups"
+              accessibilityState={{ selected: activeGroupId === null }}
+            >
               <GlassView
                 glassEffectStyle="regular"
                 isInteractive
@@ -116,7 +125,13 @@ export function StandingsModal({
               </GlassView>
             </Pressable>
             {groups.map((g) => (
-              <Pressable key={g.id} onPress={() => setActiveGroupId(g.id)}>
+              <Pressable
+                key={g.id}
+                onPress={() => setActiveGroupId(g.id)}
+                accessibilityRole="button"
+                accessibilityLabel={g.name}
+                accessibilityState={{ selected: activeGroupId === g.id }}
+              >
                 <GlassView
                   glassEffectStyle="regular"
                   isInteractive
@@ -139,7 +154,11 @@ export function StandingsModal({
           {error ? (
             <Text style={styles.empty}>Could not load standings ({error}).</Text>
           ) : !groups ? (
-            <ActivityIndicator color={Colors.accent} style={{ marginVertical: Spacing.s4 }} />
+            <ActivityIndicator
+              color={Colors.accent}
+              style={{ marginVertical: Spacing.s4 }}
+              accessibilityLabel="Loading standings"
+            />
           ) : groups.length === 0 ? (
             <Text style={styles.empty}>No standings available for {leagueLabel}.</Text>
           ) : (

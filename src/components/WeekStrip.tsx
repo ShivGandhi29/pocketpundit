@@ -29,11 +29,17 @@ export function WeekStrip({
       renderItem={({ item, index }) => {
         const selected = index === selectedIndex;
         return (
-          <Pressable onPress={() => onSelect(index)} style={[styles.pill, selected && styles.pillSelected]}>
-            <Text style={[styles.weekLabel, selected && styles.textSelected]} numberOfLines={1}>
+          <Pressable
+            onPress={() => onSelect(index)}
+            accessibilityRole="button"
+            accessibilityLabel={`${item.shortLabel}, ${MONTH_DAY.format(new Date(item.startDate))}`}
+            accessibilityState={{ selected }}
+            style={[styles.pill, selected && styles.pillSelected]}
+          >
+            <Text style={[styles.weekLabel, selected && styles.textSelected]} numberOfLines={1} maxFontSizeMultiplier={1.3}>
               {item.shortLabel}
             </Text>
-            <Text style={[styles.weekDate, selected && styles.textSelected]} numberOfLines={1}>
+            <Text style={[styles.weekDate, selected && styles.textSelected]} numberOfLines={1} maxFontSizeMultiplier={1.3}>
               {MONTH_DAY.format(new Date(item.startDate))}
             </Text>
           </Pressable>

@@ -12,8 +12,14 @@ const RANGE_FORMAT = new Intl.DateTimeFormat(undefined, { month: 'short', day: '
 export function MotorsportEventCard({ event, onPress }: { event: MotorsportEvent; onPress: () => void }) {
   const isPast = new Date(event.endDate).getTime() < Date.now();
   const dateRange = `${RANGE_FORMAT.format(new Date(event.date))} – ${RANGE_FORMAT.format(new Date(event.endDate))}`;
+  const label = `${event.name}, ${isPast ? 'completed' : `${dateRange}, starts ${formatLocalKickoff(event.date)}`}`;
   return (
-    <Pressable onPress={onPress} style={({ pressed }) => [styles.card, pressed && styles.pressed]}>
+    <Pressable
+      onPress={onPress}
+      accessibilityRole="button"
+      accessibilityLabel={label}
+      style={({ pressed }) => [styles.card, pressed && styles.pressed]}
+    >
       <View style={styles.info}>
         <Text style={[styles.status, isPast && styles.statusPast]}>{isPast ? 'COMPLETED' : dateRange}</Text>
         <Text style={styles.name} numberOfLines={2}>

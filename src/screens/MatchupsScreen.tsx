@@ -199,7 +199,9 @@ export function MatchupsScreen({ leagues, state }: { leagues: League[]; state: A
   return (
     <View style={[styles.container, { paddingTop: insets.top }]}>
       <View style={styles.topbar}>
-        <Text style={styles.brand}>PocketPundit</Text>
+        <Text style={styles.brand} accessibilityRole="header">
+          PocketPundit
+        </Text>
         <View style={styles.topbarActions}>
           {!isMotorsportTab ? (
             <GlassIconButton
@@ -238,7 +240,12 @@ export function MatchupsScreen({ leagues, state }: { leagues: League[]; state: A
           renderItem={({ item }) => {
             const selected = item.id === activeTab;
             return (
-              <Pressable onPress={() => setActiveTab(item.id)}>
+              <Pressable
+                onPress={() => setActiveTab(item.id)}
+                accessibilityRole="tab"
+                accessibilityLabel={item.label}
+                accessibilityState={{ selected }}
+              >
                 <GlassView
                   glassEffectStyle="regular"
                   isInteractive
@@ -260,7 +267,11 @@ export function MatchupsScreen({ leagues, state }: { leagues: League[]; state: A
                       <Ionicons name="apps-outline" size={20} color={selected ? Colors.onAccent : Colors.text} />
                     </View>
                   )}
-                  <Text style={[styles.tabText, selected && styles.tabTextSelected]} numberOfLines={1}>
+                  <Text
+                    style={[styles.tabText, selected && styles.tabTextSelected]}
+                    numberOfLines={1}
+                    maxFontSizeMultiplier={1.3}
+                  >
                     {item.label}
                   </Text>
                 </GlassView>
@@ -291,9 +302,13 @@ export function MatchupsScreen({ leagues, state }: { leagues: League[]; state: A
 
       {isMotorsportTab ? (
         motorsportEvents === null ? (
-          <Text style={styles.empty}>Loading schedule…</Text>
+          <Text style={styles.empty} accessibilityLiveRegion="polite">
+            Loading schedule…
+          </Text>
         ) : motorsportError ? (
-          <Text style={styles.empty}>Could not load schedule ({motorsportError}).</Text>
+          <Text style={styles.empty} accessibilityLiveRegion="polite">
+            Could not load schedule ({motorsportError}).
+          </Text>
         ) : motorsportEvents.length === 0 ? (
           <Text style={styles.empty}>No races scheduled.</Text>
         ) : (
@@ -308,9 +323,13 @@ export function MatchupsScreen({ leagues, state }: { leagues: League[]; state: A
           />
         )
       ) : games === null ? (
-        <Text style={styles.empty}>Loading matchups…</Text>
+        <Text style={styles.empty} accessibilityLiveRegion="polite">
+          Loading matchups…
+        </Text>
       ) : error ? (
-        <Text style={styles.empty}>Could not load games ({error}).</Text>
+        <Text style={styles.empty} accessibilityLiveRegion="polite">
+          Could not load games ({error}).
+        </Text>
       ) : visibleGames && visibleGames.length === 0 ? (
         <Text style={styles.empty}>{emptyMessage}</Text>
       ) : (

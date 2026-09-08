@@ -114,7 +114,9 @@ function StatGroupTable({ group }: { group: PlayerStatGroup }) {
   if (!group.athletes.length) return null;
   return (
     <View style={styles.statGroup}>
-      <Text style={styles.statGroupLabel}>{group.category}</Text>
+      <Text style={styles.statGroupLabel} accessibilityRole="header">
+        {group.category}
+      </Text>
       <ScrollView horizontal showsHorizontalScrollIndicator={false}>
         <View>
           <View style={styles.boxRow}>
@@ -159,7 +161,14 @@ function BoxScoreTab({ summary, game }: { summary: GameSummary; game: Game }) {
         {([game.away, game.home] as const).map((t) => {
           const selected = t.id === (teamBox.teamId ?? activeTeamId);
           return (
-            <Pressable key={t.id ?? t.abbreviation} onPress={() => setActiveTeamId(t.id)} style={styles.teamToggleFlex}>
+            <Pressable
+              key={t.id ?? t.abbreviation}
+              onPress={() => setActiveTeamId(t.id)}
+              accessibilityRole="button"
+              accessibilityLabel={t.name}
+              accessibilityState={{ selected }}
+              style={styles.teamToggleFlex}
+            >
               {({ pressed }) => (
                 <GlassView
                   glassEffectStyle="regular"
@@ -289,7 +298,13 @@ export function GameStatsTabs({ game, leagueId }: { game: Game; leagueId: string
         {TABS.map((tab) => {
           const selected = tab.id === activeTab;
           return (
-            <Pressable key={tab.id} onPress={() => setActiveTab(tab.id)}>
+            <Pressable
+              key={tab.id}
+              onPress={() => setActiveTab(tab.id)}
+              accessibilityRole="tab"
+              accessibilityLabel={tab.label}
+              accessibilityState={{ selected }}
+            >
               {({ pressed }) => (
                 <GlassView
                   glassEffectStyle="regular"
@@ -308,7 +323,11 @@ export function GameStatsTabs({ game, leagueId }: { game: Game; leagueId: string
       {error ? (
         <Text style={styles.empty}>Could not load stats ({error}).</Text>
       ) : !summary ? (
-        <ActivityIndicator color={Colors.accent} style={{ marginVertical: Spacing.s4 }} />
+        <ActivityIndicator
+          color={Colors.accent}
+          style={{ marginVertical: Spacing.s4 }}
+          accessibilityLabel="Loading stats"
+        />
       ) : activeTab === 'leaders' ? (
         <LeadersTab summary={summary} game={game} />
       ) : activeTab === 'boxscore' ? (

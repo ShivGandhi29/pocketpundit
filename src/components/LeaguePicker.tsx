@@ -99,7 +99,9 @@ export function LeaguePicker({
 
   return (
     <SafeAreaView style={styles.container} edges={['top', 'bottom']}>
-      <Text style={styles.title}>Pick your leagues</Text>
+      <Text style={styles.title} accessibilityRole="header">
+        Pick your leagues
+      </Text>
       <Text style={styles.subtitle}>Only matchups from these leagues will show up in your feed.</Text>
 
       <GlassView glassEffectStyle="regular" style={styles.searchRow}>
@@ -114,7 +116,7 @@ export function LeaguePicker({
           style={styles.searchInput}
         />
         {query.length > 0 ? (
-          <Pressable onPress={() => setQuery('')} hitSlop={14}>
+          <Pressable onPress={() => setQuery('')} hitSlop={14} accessibilityRole="button" accessibilityLabel="Clear search">
             <Ionicons name="close-circle" size={18} color={Colors.textMuted} />
           </Pressable>
         ) : null}
@@ -126,7 +128,9 @@ export function LeaguePicker({
         ) : (
           groupedLeagues.map((group) => (
             <View key={group.sport} style={styles.sportGroup}>
-              <Text style={styles.sportHeading}>{SPORT_LABELS[group.sport]}</Text>
+              <Text style={styles.sportHeading} accessibilityRole="header">
+                {SPORT_LABELS[group.sport]}
+              </Text>
               <View style={styles.grid}>
                 {group.leagues.map((league) => {
                   const checked = selected.has(league.id);
@@ -177,7 +181,13 @@ export function LeaguePicker({
             contentContainerStyle={styles.selectedRowContent}
           >
             {selectedLeagues.map((league) => (
-              <Pressable key={league.id} onPress={() => toggle(league.id)} hitSlop={4}>
+              <Pressable
+                key={league.id}
+                onPress={() => toggle(league.id)}
+                hitSlop={4}
+                accessibilityRole="button"
+                accessibilityLabel={`Remove ${league.label}`}
+              >
                 {({ pressed }) => (
                   <GlassView
                     glassEffectStyle="regular"
@@ -202,6 +212,8 @@ export function LeaguePicker({
         <Pressable
           disabled={selected.size === 0}
           onPress={() => onContinue(Array.from(selected))}
+          accessibilityRole="button"
+          accessibilityState={{ disabled: selected.size === 0 }}
           style={({ pressed }) => [
             styles.continueBtn,
             selected.size === 0 && styles.continueBtnDisabled,

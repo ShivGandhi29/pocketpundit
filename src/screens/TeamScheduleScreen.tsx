@@ -1,3 +1,4 @@
+import { Ionicons } from '@expo/vector-icons';
 import { useRouter } from 'expo-router';
 import { useEffect, useState } from 'react';
 import { FlatList, Image, Pressable, StyleSheet, View } from 'react-native';
@@ -74,12 +75,19 @@ export function TeamScheduleScreen({
   return (
     <SafeAreaView style={styles.container} edges={['top', 'bottom']}>
       <View style={styles.header}>
-        <Pressable onPress={() => router.back()} hitSlop={12} style={styles.backBtn}>
+        <Pressable
+          onPress={() => router.back()}
+          hitSlop={12}
+          accessibilityRole="button"
+          accessibilityLabel="Back"
+          style={styles.backBtn}
+        >
+          <Ionicons name="chevron-back" size={18} color={Colors.accent} />
           <Text style={styles.backBtnText}>Back</Text>
         </Pressable>
         <View style={styles.headerTitle}>
           {teamLogo ? <Image source={{ uri: teamLogo }} style={styles.headerLogo} /> : null}
-          <Text style={styles.headerTitleText} numberOfLines={1}>
+          <Text style={styles.headerTitleText} numberOfLines={1} accessibilityRole="header">
             {teamName}
           </Text>
         </View>
@@ -87,7 +95,9 @@ export function TeamScheduleScreen({
       </View>
 
       {schedule === null ? (
-        <Text style={styles.empty}>{error ? `Could not load schedule (${error}).` : 'Loading schedule…'}</Text>
+        <Text style={styles.empty} accessibilityLiveRegion="polite">
+          {error ? `Could not load schedule (${error}).` : 'Loading schedule…'}
+        </Text>
       ) : schedule.length === 0 ? (
         <Text style={styles.empty}>No schedule available right now.</Text>
       ) : (
@@ -113,7 +123,7 @@ const styles = StyleSheet.create({
     borderBottomWidth: 1,
     borderBottomColor: Colors.border,
   },
-  backBtn: { minWidth: 56, minHeight: 44, justifyContent: 'center' },
+  backBtn: { flexDirection: 'row', alignItems: 'center', minWidth: 56, minHeight: 44 },
   backBtnText: { color: Colors.accent, fontFamily: Fonts.semibold, fontWeight: '600', fontSize: 15 },
   headerTitle: { flex: 1, flexDirection: 'row', alignItems: 'center', justifyContent: 'center', gap: Spacing.s2 },
   headerLogo: { width: 22, height: 22, resizeMode: 'contain' },

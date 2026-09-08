@@ -25,7 +25,7 @@ export default function Home() {
 
   if (!state) {
     return (
-      <View style={styles.center}>
+      <View style={styles.center} accessibilityLabel="Loading" accessibilityRole="progressbar">
         <ActivityIndicator color={Colors.accent} size="large" />
       </View>
     );

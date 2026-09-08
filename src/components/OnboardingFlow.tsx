@@ -1,7 +1,15 @@
 import { useState } from 'react';
 import { StyleSheet, View } from 'react-native';
 import { Text } from '@/components/AppText';
-import Animated, { FadeInRight, FadeOutLeft, FadeInLeft, FadeOutRight } from 'react-native-reanimated';
+import Animated, {
+  FadeIn,
+  FadeOut,
+  FadeInRight,
+  FadeOutLeft,
+  FadeInLeft,
+  FadeOutRight,
+  useReducedMotion,
+} from 'react-native-reanimated';
 
 import { LeaguePicker } from '@/components/LeaguePicker';
 import { TeamPicker } from '@/components/TeamPicker';
@@ -35,6 +43,10 @@ export function OnboardingFlow({
   const [step, setStep] = useState<'leagues' | 'teams'>('leagues');
   const [direction, setDirection] = useState<'forward' | 'back'>('forward');
   const [selectedLeagueIds, setSelectedLeagueIds] = useState<string[]>(initialState.selectedLeagueIds);
+  // Reduce Motion swaps the directional slide+fade for a plain cross-fade —
+  // Design Guideline (Accessibility > Cognitive): "replace transitions in
+  // x-, y-, and z-axes with fades to avoid motion" when the setting is on.
+  const reducedMotion = useReducedMotion();
 
   // Favoriting a team makes no sense for motorsport (drivers, not teams), so
   // the second step only exists when at least one selected league has teams
@@ -47,8 +59,10 @@ export function OnboardingFlow({
       <Animated.View
         key="leagues"
         style={styles.flex}
-        entering={direction === 'back' ? FadeInLeft.duration(220) : undefined}
-        exiting={FadeOutLeft.duration(160)}
+        entering={
+          direction === 'back' ? (reducedMotion ? FadeIn.duration(160) : FadeInLeft.duration(220)) : undefined
+        }
+        exiting={reducedMotion ? FadeOut.duration(120) : FadeOutLeft.duration(160)}
       >
         <StepDots total={totalSteps} current={0} />
         <LeaguePicker
@@ -73,8 +87,8 @@ export function OnboardingFlow({
     <Animated.View
       key="teams"
       style={styles.flex}
-      entering={FadeInRight.duration(220)}
-      exiting={FadeOutRight.duration(160)}
+      entering={reducedMotion ? FadeIn.duration(160) : FadeInRight.duration(220)}
+      exiting={reducedMotion ? FadeOut.duration(120) : FadeOutRight.duration(160)}
     >
       <StepDots total={totalSteps} current={1} />
       <TeamPicker

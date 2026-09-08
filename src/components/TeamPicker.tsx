@@ -48,11 +48,17 @@ function TeamGroup({
 
   return (
     <View style={styles.group}>
-      <Text style={styles.groupHeading}>{league.label}</Text>
+      <Text style={styles.groupHeading} accessibilityRole="header">
+        {league.label}
+      </Text>
       {error ? (
         <Text style={styles.muted}>Could not load teams ({error}).</Text>
       ) : !teams ? (
-        <ActivityIndicator color={Colors.accent} style={{ marginVertical: Spacing.s3 }} />
+        <ActivityIndicator
+          color={Colors.accent}
+          style={{ marginVertical: Spacing.s3 }}
+          accessibilityLabel={`Loading ${league.label} teams`}
+        />
       ) : (
         <View style={styles.grid}>
           {teams.map((team) => {
@@ -122,14 +128,16 @@ export function TeamPicker({
   return (
     <SafeAreaView style={styles.container} edges={['top', 'bottom']}>
       <ScrollView contentContainerStyle={styles.scrollContent}>
-        <Text style={styles.title}>Favorite your teams</Text>
+        <Text style={styles.title} accessibilityRole="header">
+          Favorite your teams
+        </Text>
         <Text style={styles.subtitle}>Optional — their games get pinned to the top of your list.</Text>
         {teamLeagues.map((league) => (
           <TeamGroup key={league.id} league={league} favorites={favorites} onToggle={toggle} tileWidth={tileWidth} />
         ))}
       </ScrollView>
       <View style={styles.actions}>
-        <Pressable style={styles.btnFlex} onPress={onBack}>
+        <Pressable style={styles.btnFlex} onPress={onBack} accessibilityRole="button" accessibilityLabel="Back">
           {({ pressed }) => (
             <GlassView glassEffectStyle="regular" isInteractive style={[styles.btn, pressed && styles.pressed]}>
               <Text style={styles.btnGhostText}>Back</Text>
@@ -139,6 +147,8 @@ export function TeamPicker({
         <Pressable
           style={({ pressed }) => [styles.btn, styles.btnPrimary, pressed && styles.pressed]}
           onPress={() => onFinish(Object.fromEntries(favorites))}
+          accessibilityRole="button"
+          accessibilityLabel="Done"
         >
           <Text style={styles.btnPrimaryText}>Done</Text>
         </Pressable>

@@ -18,6 +18,8 @@ function TeamSide({ team, onPress }: { team: GameTeam; onPress?: () => void }) {
     <Pressable
       onPress={onPress}
       disabled={!onPress}
+      accessibilityRole={onPress ? 'button' : undefined}
+      accessibilityLabel={onPress ? `View ${team.name} schedule` : undefined}
       style={({ pressed }) => [styles.side, { backgroundColor: tint(team.color) }, pressed && onPress && styles.sidePressed]}
     >
       {team.logo ? <Image source={{ uri: team.logo }} style={styles.logo} /> : <View style={styles.logo} />}

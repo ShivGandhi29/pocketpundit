@@ -53,9 +53,21 @@ export function GameCard({
   const isLive = game.state === 'in';
   const isPre = game.state === 'pre';
 
+  const statusText = isPre
+    ? `${formatKickoffTime(game.date)} ${formatKickoffDate(game.date)}`
+    : isLive
+      ? `Live, ${game.detail}`
+      : game.detail || 'Final';
+  const scoreText = isPre
+    ? ''
+    : `, ${game.away.abbreviation ?? game.away.name} ${game.away.score ?? '-'}, ${game.home.abbreviation ?? game.home.name} ${game.home.score ?? '-'}`;
+  const label = `${game.away.name} at ${game.home.name}${favorite ? ', favorite' : ''}, ${statusText}${scoreText}`;
+
   return (
     <Pressable
       onPress={onPress}
+      accessibilityRole="button"
+      accessibilityLabel={label}
       style={({ pressed }) => [styles.card, favorite && styles.cardFavorite, pressed && styles.pressed]}
     >
       {isPre ? (

@@ -70,7 +70,7 @@ export function MotorsportDetailModal({
       <SafeAreaProvider>
         <SafeAreaView style={styles.sheet} edges={['top', 'bottom']}>
           <View style={styles.header}>
-            <Text style={styles.headerTitle} numberOfLines={1}>
+            <Text style={styles.headerTitle} numberOfLines={1} accessibilityRole="header">
               {leagueLabel} · {event?.name ?? ''}
             </Text>
             <GlassIconButton name="close" size={18} onPress={onClose} accessibilityLabel="Close" />
@@ -79,17 +79,25 @@ export function MotorsportDetailModal({
             {error ? (
               <Text style={styles.error}>Could not load this race ({error}).</Text>
             ) : !detail ? (
-              <ActivityIndicator color={Colors.accent} style={{ marginVertical: Spacing.s4 }} />
+              <ActivityIndicator
+                color={Colors.accent}
+                style={{ marginVertical: Spacing.s4 }}
+                accessibilityLabel="Loading race detail"
+              />
             ) : (
               <>
-                <Text style={styles.sectionHeading}>Sessions</Text>
+                <Text style={styles.sectionHeading} accessibilityRole="header">
+                  Sessions
+                </Text>
                 <View style={styles.sessionCard}>
                   {detail.sessions.map((s) => (
                     <SessionRow key={s.id} session={s} />
                   ))}
                 </View>
 
-                <Text style={styles.sectionHeading}>Results</Text>
+                <Text style={styles.sectionHeading} accessibilityRole="header">
+                  Results
+                </Text>
                 {detail.results.length === 0 ? (
                   <Text style={styles.empty}>Results will appear here once the race is run.</Text>
                 ) : (
