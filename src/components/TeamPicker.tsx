@@ -5,6 +5,8 @@ import { Text } from '@/components/AppText';
 import { GlassView } from 'expo-glass-effect';
 import { SafeAreaView } from 'react-native-safe-area-context';
 
+import { OnboardingHeader } from '@/components/onboarding/OnboardingHeader';
+import { PillButton } from '@/components/onboarding/PillButton';
 import { getTeams } from '@/services/api';
 import { Colors, Radius, Spacing } from '@/constants/theme';
 import { Fonts } from '@/constants/fonts';
@@ -128,30 +130,14 @@ export function TeamPicker({
   return (
     <SafeAreaView style={styles.container} edges={['top', 'bottom']}>
       <ScrollView contentContainerStyle={styles.scrollContent}>
-        <Text style={styles.title} accessibilityRole="header">
-          Favorite your teams
-        </Text>
-        <Text style={styles.subtitle}>Optional — their games get pinned to the top of your list.</Text>
+        <OnboardingHeader title="Favorite your teams" subtitle="Optional — their games get pinned to the top of your list." />
         {teamLeagues.map((league) => (
           <TeamGroup key={league.id} league={league} favorites={favorites} onToggle={toggle} tileWidth={tileWidth} />
         ))}
       </ScrollView>
       <View style={styles.actions}>
-        <Pressable style={styles.btnFlex} onPress={onBack} accessibilityRole="button" accessibilityLabel="Back">
-          {({ pressed }) => (
-            <GlassView glassEffectStyle="regular" isInteractive style={[styles.btn, pressed && styles.pressed]}>
-              <Text style={styles.btnGhostText}>Back</Text>
-            </GlassView>
-          )}
-        </Pressable>
-        <Pressable
-          style={({ pressed }) => [styles.btn, styles.btnPrimary, pressed && styles.pressed]}
-          onPress={() => onFinish(Object.fromEntries(favorites))}
-          accessibilityRole="button"
-          accessibilityLabel="Done"
-        >
-          <Text style={styles.btnPrimaryText}>Done</Text>
-        </Pressable>
+        <PillButton variant="outline" label="Back" onPress={onBack} style={styles.actionBtn} />
+        <PillButton label="Done" onPress={() => onFinish(Object.fromEntries(favorites))} style={styles.actionBtn} />
       </View>
     </SafeAreaView>
   );
@@ -160,8 +146,6 @@ export function TeamPicker({
 const styles = StyleSheet.create({
   container: { flex: 1 },
   scrollContent: { padding: Spacing.s4, paddingBottom: Spacing.s6 },
-  title: { color: Colors.text, fontSize: 26, fontFamily: Fonts.bold, fontWeight: '700', letterSpacing: -0.4, marginBottom: Spacing.s1 },
-  subtitle: { color: Colors.textMuted, fontSize: 15, marginBottom: Spacing.s4 },
   group: { marginBottom: Spacing.s4 },
   groupHeading: {
     color: Colors.textMuted,
@@ -213,10 +197,6 @@ const styles = StyleSheet.create({
     borderTopWidth: 1,
     borderTopColor: Colors.border,
   },
-  btnFlex: { flex: 1 },
-  btn: { flex: 1, minHeight: 48, borderRadius: Radius.sm, alignItems: 'center', justifyContent: 'center' },
-  btnPrimary: { backgroundColor: Colors.accent },
-  btnPrimaryText: { color: Colors.onAccent, fontFamily: Fonts.bold, fontWeight: '700', fontSize: 15 },
-  btnGhostText: { color: Colors.text, fontFamily: Fonts.semibold, fontWeight: '600', fontSize: 15 },
+  actionBtn: { flex: 1 },
   pressed: { opacity: 0.85 },
 });

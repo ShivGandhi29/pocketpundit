@@ -1,6 +1,5 @@
 import { useState } from 'react';
-import { StyleSheet, View } from 'react-native';
-import { Text } from '@/components/AppText';
+import { StyleSheet } from 'react-native';
 import Animated, {
   FadeIn,
   FadeOut,
@@ -12,24 +11,9 @@ import Animated, {
 } from 'react-native-reanimated';
 
 import { LeaguePicker } from '@/components/LeaguePicker';
+import { ProgressDots } from '@/components/onboarding/ProgressDots';
 import { TeamPicker } from '@/components/TeamPicker';
-import { Colors, Spacing } from '@/constants/theme';
-import { Fonts } from '@/constants/fonts';
 import type { AppState, FavoriteTeam, League } from '@/types/pocketpundit';
-
-function StepDots({ total, current }: { total: number; current: number }) {
-  if (total < 2) return null;
-  return (
-    <View style={styles.dotsRow}>
-      {Array.from({ length: total }).map((_, i) => (
-        <View key={i} style={[styles.dot, i === current && styles.dotActive]} />
-      ))}
-      <Text style={styles.dotsLabel}>
-        Step {current + 1} of {total}
-      </Text>
-    </View>
-  );
-}
 
 export function OnboardingFlow({
   leagues,
@@ -64,7 +48,7 @@ export function OnboardingFlow({
         }
         exiting={reducedMotion ? FadeOut.duration(120) : FadeOutLeft.duration(160)}
       >
-        <StepDots total={totalSteps} current={0} />
+        <ProgressDots total={totalSteps} current={0} />
         <LeaguePicker
           leagues={leagues}
           preselected={selectedLeagueIds}
@@ -90,7 +74,7 @@ export function OnboardingFlow({
       entering={reducedMotion ? FadeIn.duration(160) : FadeInRight.duration(220)}
       exiting={reducedMotion ? FadeOut.duration(120) : FadeOutRight.duration(160)}
     >
-      <StepDots total={totalSteps} current={1} />
+      <ProgressDots total={totalSteps} current={1} />
       <TeamPicker
         leagues={teamLeagues}
         initialFavorites={initialState.favoriteTeams}
@@ -108,14 +92,4 @@ export function OnboardingFlow({
 
 const styles = StyleSheet.create({
   flex: { flex: 1 },
-  dotsRow: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    gap: 6,
-    paddingTop: Spacing.s3,
-    paddingHorizontal: Spacing.s4,
-  },
-  dot: { width: 6, height: 6, borderRadius: 3, backgroundColor: Colors.border },
-  dotActive: { backgroundColor: Colors.accent, width: 18 },
-  dotsLabel: { marginLeft: Spacing.s2, color: Colors.textMuted, fontSize: 12, fontFamily: Fonts.semibold, fontWeight: '600' },
 });

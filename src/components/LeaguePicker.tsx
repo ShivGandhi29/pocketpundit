@@ -5,6 +5,8 @@ import { Text } from '@/components/AppText';
 import { GlassView } from 'expo-glass-effect';
 import { SafeAreaView } from 'react-native-safe-area-context';
 
+import { OnboardingHeader } from '@/components/onboarding/OnboardingHeader';
+import { PillButton } from '@/components/onboarding/PillButton';
 import { Colors, Radius, Spacing } from '@/constants/theme';
 import { Fonts } from '@/constants/fonts';
 import type { League } from '@/types/pocketpundit';
@@ -99,10 +101,7 @@ export function LeaguePicker({
 
   return (
     <SafeAreaView style={styles.container} edges={['top', 'bottom']}>
-      <Text style={styles.title} accessibilityRole="header">
-        Pick your leagues
-      </Text>
-      <Text style={styles.subtitle}>Only matchups from these leagues will show up in your feed.</Text>
+      <OnboardingHeader title="Pick your leagues" subtitle="Only matchups from these leagues will show up in your feed." />
 
       <GlassView glassEffectStyle="regular" style={styles.searchRow}>
         <Ionicons name="search" size={18} color={Colors.textMuted} />
@@ -209,21 +208,11 @@ export function LeaguePicker({
           </ScrollView>
         ) : null}
 
-        <Pressable
-          disabled={selected.size === 0}
+        <PillButton
+          label={selected.size === 0 ? 'Continue' : `Continue (${selected.size})`}
           onPress={() => onContinue(Array.from(selected))}
-          accessibilityRole="button"
-          accessibilityState={{ disabled: selected.size === 0 }}
-          style={({ pressed }) => [
-            styles.continueBtn,
-            selected.size === 0 && styles.continueBtnDisabled,
-            pressed && selected.size > 0 && styles.pressed,
-          ]}
-        >
-          <Text style={styles.continueBtnText}>
-            {selected.size === 0 ? 'Continue' : `Continue (${selected.size})`}
-          </Text>
-        </Pressable>
+          disabled={selected.size === 0}
+        />
       </View>
     </SafeAreaView>
   );
@@ -231,8 +220,6 @@ export function LeaguePicker({
 
 const styles = StyleSheet.create({
   container: { flex: 1, padding: Spacing.s4 },
-  title: { color: Colors.text, fontSize: 26, fontFamily: Fonts.bold, fontWeight: '700', letterSpacing: -0.4, marginBottom: Spacing.s1 },
-  subtitle: { color: Colors.textMuted, fontSize: 15, marginBottom: Spacing.s3 },
   searchRow: {
     flexDirection: 'row',
     alignItems: 'center',
@@ -317,14 +304,5 @@ const styles = StyleSheet.create({
   },
   chipLogo: { width: 14, height: 14, resizeMode: 'contain' },
   chipLabel: { color: Colors.text, fontSize: 13, fontFamily: Fonts.bold, fontWeight: '700' },
-  continueBtn: {
-    minHeight: 48,
-    borderRadius: Radius.sm,
-    backgroundColor: Colors.accent,
-    alignItems: 'center',
-    justifyContent: 'center',
-  },
-  continueBtnDisabled: { opacity: 0.4 },
-  continueBtnText: { color: Colors.onAccent, fontFamily: Fonts.bold, fontWeight: '700', fontSize: 15 },
   pressed: { opacity: 0.85 },
 });
