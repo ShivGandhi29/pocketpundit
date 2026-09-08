@@ -1,8 +1,9 @@
 import { Ionicons } from '@expo/vector-icons';
-import { useEffect, useMemo, useState } from 'react';
-import { ActivityIndicator, Image, Modal, Pressable, ScrollView, StyleSheet, View } from 'react-native';
-import { Text } from '@/components/AppText';
+import { Image } from 'expo-image';
 import { GlassView } from 'expo-glass-effect';
+import { memo, useEffect, useMemo, useState } from 'react';
+import { ActivityIndicator, Modal, Pressable, ScrollView, StyleSheet, View } from 'react-native';
+import { Text } from '@/components/AppText';
 import { SafeAreaView } from 'react-native-safe-area-context';
 
 import { getStandings } from '@/services/api';
@@ -11,7 +12,7 @@ import { Colors, Radius, Spacing } from '@/constants/theme';
 import { Fonts } from '@/constants/fonts';
 import type { StandingsGroup } from '@/types/pocketpundit';
 
-function GroupTable({ group }: { group: StandingsGroup }) {
+const GroupTable = memo(function GroupTable({ group }: { group: StandingsGroup }) {
   return (
     <View style={styles.groupCard}>
       <View style={styles.groupHeaderRow}>
@@ -33,7 +34,11 @@ function GroupTable({ group }: { group: StandingsGroup }) {
       {group.rows.map((row) => (
         <View key={row.teamId || row.teamName} style={styles.tableRow}>
           <View style={[styles.cell, styles.teamCell]}>
-            {row.logo ? <Image source={{ uri: row.logo }} style={styles.teamLogo} /> : <View style={styles.teamLogo} />}
+            {row.logo ? (
+              <Image source={{ uri: row.logo }} style={styles.teamLogo} contentFit="contain" />
+            ) : (
+              <View style={styles.teamLogo} />
+            )}
             <Text style={styles.teamName} numberOfLines={1}>
               {row.teamName}
             </Text>
@@ -48,7 +53,7 @@ function GroupTable({ group }: { group: StandingsGroup }) {
       ))}
     </View>
   );
-}
+});
 
 export function StandingsModal({
   visible,
@@ -228,8 +233,8 @@ const styles = StyleSheet.create({
     borderTopColor: Colors.border,
   },
   cell: { width: 40, color: Colors.text, fontSize: 13, fontFamily: Fonts.semibold, fontWeight: '600', textAlign: 'center', fontVariant: ['tabular-nums'] },
-  headText: { color: Colors.textMuted, fontSize: 11, fontFamily: Fonts.bold, fontWeight: '700', textTransform: 'uppercase' },
+  headText: { color: Colors.textMuted, fontSize: 12, fontFamily: Fonts.bold, fontWeight: '700' },
   teamCell: { flex: 1, flexDirection: 'row', alignItems: 'center', gap: Spacing.s2 },
-  teamLogo: { width: 22, height: 22, resizeMode: 'contain' },
+  teamLogo: { width: 22, height: 22 },
   teamName: { flex: 1, color: Colors.text, fontSize: 14, fontFamily: Fonts.semibold, fontWeight: '600' },
 });

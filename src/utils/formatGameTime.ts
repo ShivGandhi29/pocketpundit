@@ -43,6 +43,25 @@ export function formatKickoffDate(dateIso: string): string {
   return WEEKDAY_DATE.format(new Date(dateIso));
 }
 
+const WEEKDAY_MONTH_DAY = new Intl.DateTimeFormat(undefined, { weekday: 'short', month: 'short', day: 'numeric' });
+
+/** A longer, more readable date than formatKickoffDate's numeric form, e.g.
+ * "Sun, Sep 13" — for contexts with more room (ScoreBug) than a compact
+ * list card (GameCard). */
+export function formatKickoffDateLong(dateIso: string): string {
+  return WEEKDAY_MONTH_DAY.format(new Date(dateIso));
+}
+
+/** Just the device's timezone abbreviation for this instant, e.g. "GMT+10" —
+ * null if the engine doesn't support timeZoneName in formatToParts. */
+export function formatKickoffZone(dateIso: string): string | null {
+  try {
+    return WITH_ZONE.formatToParts(new Date(dateIso)).find((p) => p.type === 'timeZoneName')?.value ?? null;
+  } catch {
+    return null;
+  }
+}
+
 /** YYYYMMDD in local calendar terms, for ESPN's scoreboard `dates` param. */
 export function toEspnDateParam(date: Date): string {
   const y = date.getFullYear();

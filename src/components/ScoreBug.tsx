@@ -1,17 +1,13 @@
-import { Image, Pressable, StyleSheet, View } from 'react-native';
+import { Image } from 'expo-image';
+import { LinearGradient } from 'expo-linear-gradient';
+import { Pressable, StyleSheet, View } from 'react-native';
 import { Text } from '@/components/AppText';
 
 import { Colors, Radius, Spacing } from '@/constants/theme';
 import { Fonts } from '@/constants/fonts';
-import { formatLocalKickoff } from '@/utils/formatGameTime';
+import { formatKickoffDateLong, formatKickoffTime, formatKickoffZone } from '@/utils/formatGameTime';
+import { teamGradientColor } from '@/utils/teamGradient';
 import type { Game, GameTeam } from '@/types/pocketpundit';
-
-// Low-opacity team-color wash behind each side, echoing ESPN's gradient
-// score-bug without needing a gradient library (avoids pulling in a new
-// native dependency for a purely decorative touch).
-function tint(color: string | null): string {
-  return color ? `${color}26` : 'transparent'; // ~15% alpha
-}
 
 function TeamSide({ team, onPress }: { team: GameTeam; onPress?: () => void }) {
   return (
@@ -20,9 +16,9 @@ function TeamSide({ team, onPress }: { team: GameTeam; onPress?: () => void }) {
       disabled={!onPress}
       accessibilityRole={onPress ? 'button' : undefined}
       accessibilityLabel={onPress ? `View ${team.name} schedule` : undefined}
-      style={({ pressed }) => [styles.side, { backgroundColor: tint(team.color) }, pressed && onPress && styles.sidePressed]}
+      style={({ pressed }) => [styles.side, pressed && onPress && styles.sidePressed]}
     >
-      {team.logo ? <Image source={{ uri: team.logo }} style={styles.logo} /> : <View style={styles.logo} />}
+      {team.logo ? <Image source={{ uri: team.logo }} style={styles.logo} contentFit="contain" /> : <View style={styles.logo} />}
       {/* Official abbreviation (e.g. "PIT"), not the full name — compact caption under the crest. */}
       <Text style={styles.teamAbbr} numberOfLines={1}>
         {team.abbreviation ?? team.name}
@@ -109,9 +105,18 @@ export function ScoreBug({
   onPressAway?: () => void;
   onPressHome?: () => void;
 }) {
-  const statusText = game.state === 'pre' ? formatLocalKickoff(game.date) : game.detail;
+  const statusText = game.state === 'pre' ? null : game.detail;
+  const kickoffZone = game.state === 'pre' ? formatKickoffZone(game.date) : null;
   return (
-    <View style={styles.container}>
+    // Vertical split down the middle — away's color on the left blending
+    // into home's on the right — rather than a flat single-color card, per
+    // the original ESPN-style gradient score bug this was always aiming for.
+    <LinearGradient
+      colors={[teamGradientColor(game.away.color), teamGradientColor(game.home.color)]}
+      start={{ x: 0, y: 0 }}
+      end={{ x: 1, y: 0 }}
+      style={styles.container}
+    >
       <Text style={styles.seasonStage}>{game.seasonStage}</Text>
       <View style={styles.row}>
         <TeamSide team={game.away} onPress={onPressAway} />
@@ -125,21 +130,24 @@ export function ScoreBug({
               <Text style={styles.score}>{game.home.score}</Text>
             </>
           ) : (
-            <Text style={styles.statusPre} numberOfLines={2}>
-              {statusText}
-            </Text>
+            <>
+              <Text style={styles.preTime}>{formatKickoffTime(game.date)}</Text>
+              <Text style={styles.preDate} numberOfLines={1}>
+                {formatKickoffDateLong(game.date)}
+                {kickoffZone ? ` · ${kickoffZone}` : ''}
+              </Text>
+            </>
           )}
         </View>
         <TeamSide team={game.home} onPress={onPressHome} />
       </View>
       <LinescoreTable game={game} />
-    </View>
+    </LinearGradient>
   );
 }
 
 const styles = StyleSheet.create({
   container: {
-    backgroundColor: Colors.surfaceRaised,
     borderRadius: Radius.md,
     paddingVertical: Spacing.s3,
     marginBottom: Spacing.s4,
@@ -147,10 +155,8 @@ const styles = StyleSheet.create({
   },
   seasonStage: {
     color: Colors.textMuted,
-    fontSize: 11,
+    fontSize: 12,
     fontFamily: Fonts.bold, fontWeight: '700',
-    textTransform: 'uppercase',
-    letterSpacing: 0.8,
     textAlign: 'center',
     marginBottom: Spacing.s2,
   },
@@ -162,16 +168,28 @@ const styles = StyleSheet.create({
     gap: 2,
     paddingHorizontal: Spacing.s2,
     paddingVertical: Spacing.s2,
-    minHeight: 88,
+    minHeight: 132,
   },
   sidePressed: { opacity: 0.85 },
-  logo: { width: 36, height: 36, resizeMode: 'contain', marginBottom: 2 },
+  logo: { width: 60, height: 60, marginBottom: 4 },
   teamAbbr: { color: Colors.text, fontSize: 13, fontFamily: Fonts.extrabold, fontWeight: '800', letterSpacing: 0.3 },
   teamRecord: { color: Colors.textMuted, fontSize: 11, textAlign: 'center' },
   center: { alignItems: 'center', paddingHorizontal: Spacing.s2, minWidth: 88 },
   score: { color: Colors.text, fontSize: 26, fontFamily: Fonts.extrabold, fontWeight: '800', fontVariant: ['tabular-nums'] },
   status: { color: Colors.textMuted, fontSize: 11, fontFamily: Fonts.bold, fontWeight: '700', marginVertical: 2, textAlign: 'center' },
   statusLive: { color: Colors.live },
+  // Same big/small hierarchy as GameCard's pre-game headline (time carries
+  // the visual weight the score will have once the game starts; date is
+  // secondary) rather than one dense "Sun, Sep 13 at 9:00 AM GMT+10" line.
+  preTime: {
+    color: Colors.text,
+    fontSize: 22,
+    fontFamily: Fonts.extrabold,
+    fontWeight: '800',
+    letterSpacing: -0.3,
+    fontVariant: ['tabular-nums'],
+  },
+  preDate: { color: Colors.textMuted, fontSize: 12, fontFamily: Fonts.semibold, fontWeight: '600', marginTop: 2, textAlign: 'center' },
   statusPre: { color: Colors.textMuted, fontSize: 12, fontFamily: Fonts.semibold, fontWeight: '600', textAlign: 'center' },
   linescore: { marginTop: Spacing.s3, paddingHorizontal: Spacing.s3, gap: 2 },
   linescoreRow: { flexDirection: 'row', justifyContent: 'center' },

@@ -1,7 +1,8 @@
 import { Ionicons } from '@expo/vector-icons';
 import { useRouter } from 'expo-router';
-import { useEffect, useState } from 'react';
-import { FlatList, Image, Pressable, StyleSheet, View } from 'react-native';
+import { Image } from 'expo-image';
+import { memo, useEffect, useState } from 'react';
+import { FlatList, Pressable, StyleSheet, View } from 'react-native';
 import { Text } from '@/components/AppText';
 import { SafeAreaView } from 'react-native-safe-area-context';
 
@@ -17,7 +18,10 @@ const RESULT_COLOR: Record<NonNullable<ScheduleGame['result']>, string> = {
   T: Colors.textMuted,
 };
 
-function ScheduleRow({ game }: { game: ScheduleGame }) {
+// Memoized — a full season's schedule can be dozens of rows, each with an
+// opponent logo; skip re-rendering rows whose data hasn't changed when the
+// list re-renders for unrelated reasons (e.g. navigating back to this screen).
+const ScheduleRow = memo(function ScheduleRow({ game }: { game: ScheduleGame }) {
   const timeText = game.state === 'pre' ? formatLocalKickoff(game.date) : game.detail;
   return (
     <View style={styles.row}>
@@ -25,7 +29,9 @@ function ScheduleRow({ game }: { game: ScheduleGame }) {
         <Text style={styles.rowTime}>{timeText}</Text>
         <View style={styles.rowOpponentLine}>
           <Text style={styles.rowVs}>{game.isHome ? 'vs' : '@'}</Text>
-          {game.opponent.logo ? <Image source={{ uri: game.opponent.logo }} style={styles.opponentLogo} /> : null}
+          {game.opponent.logo ? (
+            <Image source={{ uri: game.opponent.logo }} style={styles.opponentLogo} contentFit="contain" />
+          ) : null}
           <Text style={styles.rowOpponent} numberOfLines={1}>
             {game.opponent.name}
           </Text>
@@ -41,7 +47,7 @@ function ScheduleRow({ game }: { game: ScheduleGame }) {
       ) : null}
     </View>
   );
-}
+});
 
 export function TeamScheduleScreen({
   leagueId,
@@ -86,7 +92,7 @@ export function TeamScheduleScreen({
           <Text style={styles.backBtnText}>Back</Text>
         </Pressable>
         <View style={styles.headerTitle}>
-          {teamLogo ? <Image source={{ uri: teamLogo }} style={styles.headerLogo} /> : null}
+          {teamLogo ? <Image source={{ uri: teamLogo }} style={styles.headerLogo} contentFit="contain" /> : null}
           <Text style={styles.headerTitleText} numberOfLines={1} accessibilityRole="header">
             {teamName}
           </Text>
@@ -126,7 +132,7 @@ const styles = StyleSheet.create({
   backBtn: { flexDirection: 'row', alignItems: 'center', minWidth: 56, minHeight: 44 },
   backBtnText: { color: Colors.accent, fontFamily: Fonts.semibold, fontWeight: '600', fontSize: 15 },
   headerTitle: { flex: 1, flexDirection: 'row', alignItems: 'center', justifyContent: 'center', gap: Spacing.s2 },
-  headerLogo: { width: 22, height: 22, resizeMode: 'contain' },
+  headerLogo: { width: 22, height: 22 },
   headerTitleText: { color: Colors.text, fontSize: 16, fontFamily: Fonts.bold, fontWeight: '700' },
   list: { padding: Spacing.s4, gap: Spacing.s2 },
   empty: { color: Colors.textMuted, textAlign: 'center', marginTop: Spacing.s6 },
@@ -141,10 +147,10 @@ const styles = StyleSheet.create({
     padding: Spacing.s3,
   },
   rowMain: { flex: 1, gap: Spacing.s1 },
-  rowTime: { color: Colors.textMuted, fontSize: 12, fontFamily: Fonts.bold, fontWeight: '700', textTransform: 'uppercase' },
+  rowTime: { color: Colors.textMuted, fontSize: 12, fontFamily: Fonts.bold, fontWeight: '700' },
   rowOpponentLine: { flexDirection: 'row', alignItems: 'center', gap: Spacing.s2 },
   rowVs: { color: Colors.textMuted, fontSize: 14, fontFamily: Fonts.semibold, fontWeight: '600' },
-  opponentLogo: { width: 20, height: 20, resizeMode: 'contain' },
+  opponentLogo: { width: 20, height: 20 },
   rowOpponent: { color: Colors.text, fontSize: 15, fontFamily: Fonts.semibold, fontWeight: '600', flexShrink: 1 },
   resultBlock: { alignItems: 'flex-end', gap: 2 },
   resultBadge: { fontSize: 16, fontFamily: Fonts.extrabold, fontWeight: '800' },

@@ -1,7 +1,8 @@
-import { useEffect, useState } from 'react';
-import { ActivityIndicator, Image, Pressable, ScrollView, StyleSheet, View } from 'react-native';
-import { Text } from '@/components/AppText';
+import { Image } from 'expo-image';
 import { GlassView } from 'expo-glass-effect';
+import { memo, useEffect, useState } from 'react';
+import { ActivityIndicator, Pressable, ScrollView, StyleSheet, View } from 'react-native';
+import { Text } from '@/components/AppText';
 
 import { getGameSummary } from '@/services/api';
 import { Colors, Radius, Spacing } from '@/constants/theme';
@@ -42,13 +43,19 @@ function splitLeaderValue(displayValue: string): { primary: string; secondary: s
   return { primary: displayValue.slice(0, idx).trim(), secondary: displayValue.slice(idx + 1).trim() };
 }
 
-function LeaderCard({ leader, align }: { leader: GameLeaderEntry | undefined; align: 'left' | 'right' }) {
+const LeaderCard = memo(function LeaderCard({
+  leader,
+  align,
+}: {
+  leader: GameLeaderEntry | undefined;
+  align: 'left' | 'right';
+}) {
   if (!leader) return <View style={styles.leaderCard} />;
   const { primary, secondary } = splitLeaderValue(leader.displayValue);
   return (
     <View style={[styles.leaderCard, align === 'right' && styles.leaderCardReverse]}>
       {leader.headshot ? (
-        <Image source={{ uri: leader.headshot }} style={styles.leaderHeadshot} />
+        <Image source={{ uri: leader.headshot }} style={styles.leaderHeadshot} contentFit="cover" />
       ) : (
         <View style={styles.leaderHeadshot} />
       )}
@@ -64,7 +71,7 @@ function LeaderCard({ leader, align }: { leader: GameLeaderEntry | undefined; al
       </View>
     </View>
   );
-}
+});
 
 function LeadersTab({ summary, game }: { summary: GameSummary; game: Game }) {
   const awayLeaders = summary.leaders.find((l) => l.teamId === game.away.id);
@@ -83,12 +90,12 @@ function LeadersTab({ summary, game }: { summary: GameSummary; game: Game }) {
     <View>
       <View style={styles.leadersTeamHeader}>
         <View style={styles.leadersTeamHeaderSide}>
-          {game.away.logo ? <Image source={{ uri: game.away.logo }} style={styles.leadersTeamLogo} /> : null}
+          {game.away.logo ? <Image source={{ uri: game.away.logo }} style={styles.leadersTeamLogo} contentFit="contain" /> : null}
           <Text style={styles.leadersTeamAbbr}>{game.away.abbreviation}</Text>
         </View>
         <View style={[styles.leadersTeamHeaderSide, styles.leadersTeamHeaderSideRight]}>
           <Text style={styles.leadersTeamAbbr}>{game.home.abbreviation}</Text>
-          {game.home.logo ? <Image source={{ uri: game.home.logo }} style={styles.leadersTeamLogo} /> : null}
+          {game.home.logo ? <Image source={{ uri: game.home.logo }} style={styles.leadersTeamLogo} contentFit="contain" /> : null}
         </View>
       </View>
 
@@ -176,7 +183,7 @@ function BoxScoreTab({ summary, game }: { summary: GameSummary; game: Game }) {
                   tintColor={selected ? Colors.accent : undefined}
                   style={[styles.teamToggle, pressed && styles.pressed]}
                 >
-                  {t.logo ? <Image source={{ uri: t.logo }} style={styles.teamToggleLogo} /> : null}
+                  {t.logo ? <Image source={{ uri: t.logo }} style={styles.teamToggleLogo} contentFit="contain" /> : null}
                   <Text style={[styles.teamToggleText, selected && styles.teamToggleTextSelected]}>
                     {t.abbreviation}
                   </Text>
@@ -188,7 +195,7 @@ function BoxScoreTab({ summary, game }: { summary: GameSummary; game: Game }) {
       </View>
 
       <View style={styles.teamHeaderRow}>
-        {team?.logo ? <Image source={{ uri: team.logo }} style={styles.teamHeaderLogo} /> : null}
+        {team?.logo ? <Image source={{ uri: team.logo }} style={styles.teamHeaderLogo} contentFit="contain" /> : null}
         <Text style={styles.teamHeaderText}>{team?.name ?? 'Team'}</Text>
       </View>
       {teamBox.groups.map((g, i) => (
@@ -233,7 +240,7 @@ function TeamStatsTab({ summary, game }: { summary: GameSummary; game: Game }) {
     <View>
       <View style={styles.teamStatsHeaderRow}>
         <View style={styles.teamStatsHeaderSide}>
-          {game.away.logo ? <Image source={{ uri: game.away.logo }} style={styles.teamStatsHeaderLogo} /> : null}
+          {game.away.logo ? <Image source={{ uri: game.away.logo }} style={styles.teamStatsHeaderLogo} contentFit="contain" /> : null}
           <Text style={styles.teamStatsHeaderTeam} numberOfLines={1}>
             {game.away.abbreviation}
           </Text>
@@ -242,7 +249,7 @@ function TeamStatsTab({ summary, game }: { summary: GameSummary; game: Game }) {
           <Text style={styles.teamStatsHeaderTeam} numberOfLines={1}>
             {game.home.abbreviation}
           </Text>
-          {game.home.logo ? <Image source={{ uri: game.home.logo }} style={styles.teamStatsHeaderLogo} /> : null}
+          {game.home.logo ? <Image source={{ uri: game.home.logo }} style={styles.teamStatsHeaderLogo} contentFit="contain" /> : null}
         </View>
       </View>
       {home.stats.map((homeStat, i) => {
@@ -364,11 +371,11 @@ const styles = StyleSheet.create({
     minHeight: 44,
     borderRadius: Radius.sm,
   },
-  teamToggleLogo: { width: 20, height: 20, resizeMode: 'contain' },
+  teamToggleLogo: { width: 20, height: 20 },
   teamToggleText: { color: Colors.textMuted, fontSize: 14, fontFamily: Fonts.bold, fontWeight: '700' },
   teamToggleTextSelected: { color: Colors.text },
   teamHeaderRow: { flexDirection: 'row', alignItems: 'center', gap: Spacing.s2, marginBottom: Spacing.s2 },
-  teamHeaderLogo: { width: 22, height: 22, resizeMode: 'contain' },
+  teamHeaderLogo: { width: 22, height: 22 },
   teamHeaderText: { color: Colors.text, fontSize: 15, fontFamily: Fonts.bold, fontWeight: '700' },
   leadersTeamHeader: {
     flexDirection: 'row',
@@ -380,7 +387,7 @@ const styles = StyleSheet.create({
   },
   leadersTeamHeaderSide: { flexDirection: 'row', alignItems: 'center', gap: Spacing.s2 },
   leadersTeamHeaderSideRight: { flexDirection: 'row-reverse' },
-  leadersTeamLogo: { width: 26, height: 26, resizeMode: 'contain' },
+  leadersTeamLogo: { width: 26, height: 26 },
   leadersTeamAbbr: { color: Colors.text, fontSize: 15, fontFamily: Fonts.extrabold, fontWeight: '800' },
   leaderCompareRow: {
     paddingVertical: Spacing.s3,
@@ -427,7 +434,7 @@ const styles = StyleSheet.create({
   },
   teamStatsHeaderSide: { flexDirection: 'row', alignItems: 'center', gap: Spacing.s2 },
   teamStatsHeaderSideRight: { flexDirection: 'row-reverse' },
-  teamStatsHeaderLogo: { width: 20, height: 20, resizeMode: 'contain' },
+  teamStatsHeaderLogo: { width: 20, height: 20 },
   teamStatsHeaderTeam: { color: Colors.text, fontSize: 13, fontFamily: Fonts.bold, fontWeight: '700' },
   teamStatsRow: {
     paddingVertical: Spacing.s2,

@@ -1,4 +1,5 @@
 import { Ionicons } from '@expo/vector-icons';
+import { memo } from 'react';
 import { Pressable, StyleSheet, View } from 'react-native';
 import { Text } from '@/components/AppText';
 
@@ -9,19 +10,27 @@ import type { MotorsportEvent } from '@/types/pocketpundit';
 
 const RANGE_FORMAT = new Intl.DateTimeFormat(undefined, { month: 'short', day: 'numeric' });
 
-export function MotorsportEventCard({ event, onPress }: { event: MotorsportEvent; onPress: () => void }) {
+// Memoized with a stable `onOpen` callback expected from the caller (see
+// MatchupsScreen's useCallback) — same reasoning as GameCard.
+export const MotorsportEventCard = memo(function MotorsportEventCard({
+  event,
+  onOpen,
+}: {
+  event: MotorsportEvent;
+  onOpen: (event: MotorsportEvent) => void;
+}) {
   const isPast = new Date(event.endDate).getTime() < Date.now();
   const dateRange = `${RANGE_FORMAT.format(new Date(event.date))} – ${RANGE_FORMAT.format(new Date(event.endDate))}`;
   const label = `${event.name}, ${isPast ? 'completed' : `${dateRange}, starts ${formatLocalKickoff(event.date)}`}`;
   return (
     <Pressable
-      onPress={onPress}
+      onPress={() => onOpen(event)}
       accessibilityRole="button"
       accessibilityLabel={label}
       style={({ pressed }) => [styles.card, pressed && styles.pressed]}
     >
       <View style={styles.info}>
-        <Text style={[styles.status, isPast && styles.statusPast]}>{isPast ? 'COMPLETED' : dateRange}</Text>
+        <Text style={[styles.status, isPast && styles.statusPast]}>{isPast ? 'Completed' : dateRange}</Text>
         <Text style={styles.name} numberOfLines={2}>
           {event.name}
         </Text>
@@ -30,7 +39,7 @@ export function MotorsportEventCard({ event, onPress }: { event: MotorsportEvent
       <Ionicons name="chevron-forward" size={18} color={Colors.textMuted} />
     </Pressable>
   );
-}
+});
 
 const styles = StyleSheet.create({
   card: {
@@ -46,10 +55,8 @@ const styles = StyleSheet.create({
   pressed: { opacity: 0.85 },
   info: { flex: 1, gap: 2 },
   status: {
-    fontSize: 11,
+    fontSize: 12,
     fontFamily: Fonts.bold, fontWeight: '700',
-    letterSpacing: 0.5,
-    textTransform: 'uppercase',
     color: Colors.textMuted,
   },
   statusPast: { color: Colors.accent },

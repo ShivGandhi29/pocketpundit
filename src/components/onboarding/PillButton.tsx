@@ -5,11 +5,11 @@ import { ButtonLabel, OutlinePillBorder } from '@/constants/onboardingTheme';
 import { Colors, Elevation, Radius, Spacing } from '@/constants/theme';
 import { Fonts } from '@/constants/fonts';
 
-// Full-pill button with an uppercase, wide-tracked label — see
-// onboardingTheme.ts for where this geometry comes from. `primary` carries a
-// heavy drop shadow (the accent fill alone doesn't read as "elevated" on a
-// near-black background); `outline` is a borderless-card alternative to a
-// second solid button for secondary actions like "Back".
+// Full-pill button — see onboardingTheme.ts for where this geometry comes
+// from. `primary` carries a heavy drop shadow (the accent fill alone doesn't
+// read as "elevated" on a near-black background); `outline` is a
+// borderless-card alternative to a second solid button for secondary
+// actions like "Back".
 export function PillButton({
   label,
   onPress,
@@ -60,8 +60,6 @@ const styles = StyleSheet.create({
   pressed: { opacity: 0.85 },
   label: {
     fontSize: ButtonLabel.fontSize,
-    letterSpacing: ButtonLabel.letterSpacing,
-    textTransform: ButtonLabel.textTransform,
     fontFamily: Fonts.bold,
     fontWeight: '700',
   },

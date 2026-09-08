@@ -237,8 +237,6 @@ const styles = StyleSheet.create({
     color: Colors.textMuted,
     fontSize: 13,
     fontFamily: Fonts.bold, fontWeight: '700',
-    textTransform: 'uppercase',
-    letterSpacing: 0.6,
     marginBottom: Spacing.s2,
   },
   grid: { flexDirection: 'row', flexWrap: 'wrap', gap: GRID_GAP },

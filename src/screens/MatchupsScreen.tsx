@@ -35,6 +35,21 @@ const UPCOMING_DAYS = 5;
 
 type UpcomingSection = { date: Date; games: Game[] };
 
+// GameCard now carries a native gradient layer plus two full-size logo
+// images per card — memoizing the component (see GameCard.tsx) stops
+// React from re-rendering cards whose data hasn't changed, but it doesn't
+// reduce how many of those heavier native views are mounted at once. That
+// still matters most right when the detail modal closes: dismissing it
+// reveals this whole list again, and the OS has to composite every
+// currently-mounted card's gradient + images as part of that transition.
+// Capping the render window keeps far fewer of them mounted off-screen.
+const GAME_LIST_PERFORMANCE_PROPS = {
+  removeClippedSubviews: true,
+  initialNumToRender: 6,
+  maxToRenderPerBatch: 6,
+  windowSize: 7,
+} as const;
+
 export function MatchupsScreen({ leagues, state }: { leagues: League[]; state: AppState }) {
   const router = useRouter();
   const insets = useSafeAreaInsets();
@@ -52,9 +67,14 @@ export function MatchupsScreen({ leagues, state }: { leagues: League[]; state: A
   const [error, setError] = useState<string | null>(null);
   const [refreshing, setRefreshing] = useState(false);
   const [openGame, setOpenGame] = useState<Game | null>(null);
+  // Stable across renders so GameCard's React.memo can actually skip
+  // re-rendering unaffected cards — an inline `() => setOpenGame(item)` per
+  // card would give memo a new function identity every render and defeat it.
+  const handleOpenGame = useCallback((game: Game) => setOpenGame(game), []);
   const [motorsportEvents, setMotorsportEvents] = useState<MotorsportEvent[] | null>(null);
   const [motorsportError, setMotorsportError] = useState<string | null>(null);
   const [openMotorsportEvent, setOpenMotorsportEvent] = useState<MotorsportEvent | null>(null);
+  const handleOpenMotorsportEvent = useCallback((event: MotorsportEvent) => setOpenMotorsportEvent(event), []);
   const [standingsOpen, setStandingsOpen] = useState(false);
 
   const isNflWeekTab = activeTab === 'nfl';
@@ -429,7 +449,7 @@ export function MatchupsScreen({ leagues, state }: { leagues: League[]; state: A
             contentContainerStyle={[styles.list, { paddingBottom: Spacing.s4 + insets.bottom }]}
             refreshControl={<RefreshControl refreshing={refreshing} onRefresh={onRefresh} tintColor={Colors.accent} />}
             renderItem={({ item }) => (
-              <MotorsportEventCard event={item} onPress={() => setOpenMotorsportEvent(item)} />
+              <MotorsportEventCard event={item} onOpen={handleOpenMotorsportEvent} />
             )}
           />
         )
@@ -453,8 +473,9 @@ export function MatchupsScreen({ leagues, state }: { leagues: League[]; state: A
             contentContainerStyle={[styles.list, { paddingBottom: Spacing.s4 + insets.bottom }]}
             refreshControl={<RefreshControl refreshing={refreshing} onRefresh={onRefresh} tintColor={Colors.accent} />}
             renderItem={({ item }) => (
-              <GameCard game={item} favorite={isFavoriteGame(item)} onPress={() => setOpenGame(item)} />
+              <GameCard game={item} favorite={isFavoriteGame(item)} onOpen={handleOpenGame} />
             )}
+            {...GAME_LIST_PERFORMANCE_PROPS}
           />
         )
       ) : visibleUpcomingSections === null ? (
@@ -488,8 +509,9 @@ export function MatchupsScreen({ leagues, state }: { leagues: League[]; state: A
             </Text>
           )}
           renderItem={({ item }) => (
-            <GameCard game={item} favorite={isFavoriteGame(item)} onPress={() => setOpenGame(item)} />
+            <GameCard game={item} favorite={isFavoriteGame(item)} onOpen={handleOpenGame} />
           )}
+          {...GAME_LIST_PERFORMANCE_PROPS}
         />
       )}
 

@@ -1,14 +1,11 @@
 import { StyleSheet, View } from 'react-native';
 import { Text } from '@/components/AppText';
 
-import { ButtonLabel } from '@/constants/onboardingTheme';
 import { Colors, Spacing } from '@/constants/theme';
 import { Fonts } from '@/constants/fonts';
 
 // Step indicator for the onboarding flow, extracted out of OnboardingFlow so
-// it can carry its own styling pass. The pip row was already pill/circle
-// geometry; the caption now uses the same uppercase, wide-tracked voice as
-// PillButton for a consistent "systematic label" feel across the flow.
+// it can carry its own styling pass.
 export function ProgressDots({ total, current }: { total: number; current: number }) {
   if (total < 2) return null;
   return (
@@ -36,9 +33,7 @@ const styles = StyleSheet.create({
   label: {
     marginLeft: Spacing.s2,
     color: Colors.textMuted,
-    fontSize: 11,
-    letterSpacing: ButtonLabel.letterSpacing,
-    textTransform: ButtonLabel.textTransform,
+    fontSize: 12,
     fontFamily: Fonts.semibold,
     fontWeight: '600',
   },

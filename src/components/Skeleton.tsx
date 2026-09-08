@@ -14,14 +14,22 @@ import { Colors, Radius, Spacing } from '@/constants/theme';
 // value instead of one animation per block. Reduce Motion swaps the pulse for
 // a fixed mid-opacity fill — Design Guideline (Motion): don't make repetitive
 // automatic animation the only state, and respect the system setting.
-function usePulse() {
+//
+// `animate` is separate from Reduce Motion: a skeleton used for genuine
+// loading should pulse (it's telling someone "this is actively fetching"),
+// but the same shape reused as a decorative mockup — e.g. the welcome
+// screen's "your feed, at a glance" preview, which never resolves into real
+// content — has to stay static. An eternally-pulsing "loading" skeleton
+// that's never actually loading reads as broken, not decorative.
+function usePulse(animate: boolean) {
   const reducedMotion = useReducedMotion();
-  const opacity = useSharedValue(reducedMotion ? 0.6 : 0.35);
+  const shouldAnimate = animate && !reducedMotion;
+  const opacity = useSharedValue(shouldAnimate ? 0.35 : 0.5);
 
   useEffect(() => {
-    if (reducedMotion) return;
+    if (!shouldAnimate) return;
     opacity.value = withRepeat(withTiming(0.75, { duration: 700 }), -1, true);
-  }, [reducedMotion, opacity]);
+  }, [shouldAnimate, opacity]);
 
   return useAnimatedStyle(() => ({ opacity: opacity.value }));
 }
@@ -30,8 +38,8 @@ function SkeletonBlock({ style, pulse }: { style: ViewStyle; pulse: ReturnType<t
   return <Animated.View style={[styles.block, style, pulse]} />;
 }
 
-export function GameCardSkeleton() {
-  const pulse = usePulse();
+export function GameCardSkeleton({ animate = true }: { animate?: boolean }) {
+  const pulse = usePulse(animate);
   return (
     <View style={styles.card}>
       <SkeletonBlock pulse={pulse} style={styles.headlineTime} />
@@ -51,11 +59,27 @@ export function GameCardSkeleton() {
   );
 }
 
-export function GamesListSkeleton({ count = 4 }: { count?: number }) {
+export function GamesListSkeleton({
+  count = 4,
+  decorative = false,
+}: {
+  count?: number;
+  /** True for a static mockup illustration (e.g. onboarding preview) rather
+   * than a real loading state — stops the pulse and drops it out of the
+   * accessibility tree instead of announcing a progress bar that never
+   * finishes. */
+  decorative?: boolean;
+}) {
   return (
-    <View style={styles.list} accessibilityLabel="Loading games" accessibilityRole="progressbar">
+    <View
+      style={styles.list}
+      accessibilityElementsHidden={decorative}
+      importantForAccessibility={decorative ? 'no-hide-descendants' : 'auto'}
+      accessibilityLabel={decorative ? undefined : 'Loading games'}
+      accessibilityRole={decorative ? undefined : 'progressbar'}
+    >
       {Array.from({ length: count }).map((_, i) => (
-        <GameCardSkeleton key={i} />
+        <GameCardSkeleton key={i} animate={!decorative} />
       ))}
     </View>
   );

@@ -12,6 +12,7 @@ import Animated, {
 
 import { LeaguePicker } from '@/components/LeaguePicker';
 import { ProgressDots } from '@/components/onboarding/ProgressDots';
+import { WelcomeScreen } from '@/components/onboarding/WelcomeScreen';
 import { TeamPicker } from '@/components/TeamPicker';
 import type { AppState, FavoriteTeam, League } from '@/types/pocketpundit';
 
@@ -19,12 +20,16 @@ export function OnboardingFlow({
   leagues,
   initialState,
   onComplete,
+  startAtWelcome = true,
 }: {
   leagues: League[];
   initialState: AppState;
   onComplete: (next: AppState) => void;
+  /** First-run onboarding shows the welcome hero; re-editing leagues/teams
+   * from Settings jumps straight to the leagues picker. */
+  startAtWelcome?: boolean;
 }) {
-  const [step, setStep] = useState<'leagues' | 'teams'>('leagues');
+  const [step, setStep] = useState<'welcome' | 'leagues' | 'teams'>(startAtWelcome ? 'welcome' : 'leagues');
   const [direction, setDirection] = useState<'forward' | 'back'>('forward');
   const [selectedLeagueIds, setSelectedLeagueIds] = useState<string[]>(initialState.selectedLeagueIds);
   // Reduce Motion swaps the directional slide+fade for a plain cross-fade —
@@ -37,6 +42,20 @@ export function OnboardingFlow({
   // to show. Selecting only F1/IndyCar/NASCAR finishes onboarding right away.
   const teamLeagues = leagues.filter((l) => selectedLeagueIds.includes(l.id) && l.kind === 'team');
   const totalSteps = teamLeagues.length > 0 ? 2 : 1;
+
+  if (step === 'welcome') {
+    return (
+      <Animated.View key="welcome" style={styles.flex} exiting={reducedMotion ? FadeOut.duration(120) : FadeOutLeft.duration(160)}>
+        <WelcomeScreen
+          leagues={leagues}
+          onGetStarted={() => {
+            setDirection('forward');
+            setStep('leagues');
+          }}
+        />
+      </Animated.View>
+    );
+  }
 
   if (step === 'leagues') {
     return (
