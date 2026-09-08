@@ -1,8 +1,17 @@
 import { createContext, useContext, useMemo, type ReactNode } from 'react';
 import { LLAMA3_2_3B_SPINQUANT, useLLM, type Message } from 'react-native-executorch';
 
-import { getTeamInjuries, getTeamStanding } from '@/services/api';
-import type { GameTeam, SeasonStage, TeamInjury, TeamStanding } from '@/types/pocketpundit';
+import { getMotorsportStandings, getTeamInjuries, getTeamStanding } from '@/services/api';
+import type {
+  GameTeam,
+  MotorsportCircuit,
+  MotorsportResult,
+  MotorsportStandingEntry,
+  MotorsportStandings,
+  SeasonStage,
+  TeamInjury,
+  TeamStanding,
+} from '@/types/pocketpundit';
 
 const SYSTEM_PROMPT =
   'You are a concise, sharp sports analyst. Your training data has a cutoff date, so any specific facts you ' +
@@ -24,11 +33,35 @@ interface AnalyzeArgs {
   liveWinProbability: { home: number; away: number } | null;
 }
 
+// Racing has no two-team "matchup" — a grid of 20 drivers, not one side
+// against another — so this is a separate prompt/args shape from
+// analyzeMatchup rather than a forced fit into the team-sport one.
+const MOTORSPORT_SYSTEM_PROMPT =
+  'You are a concise, sharp motorsport analyst. Your training data has a cutoff date, so any specific facts you ' +
+  'recall about current drivers, teams, or season standings may be stale — do not state them from memory. Base ' +
+  'your pick strictly on the championship standings, qualifying results, and event details given to you in this ' +
+  "message; if you don't have enough given data to justify a specific factor, speak generally about season form " +
+  'instead of citing facts not provided. If a qualifying grid is given, weight it heavily — grid position is one ' +
+  "of the strongest predictors of a race result. If it isn't given yet, say so and hedge toward championship " +
+  'form instead. Respond in 3-5 sentences: pick a likely race winner (or podium contender), give one key factor ' +
+  'driving the pick grounded in the provided data, and note one thing that could flip it. No headers, no bullet ' +
+  'points, plain prose.';
+
+interface AnalyzeMotorsportArgs {
+  leagueId: string;
+  leagueLabel: string;
+  eventName: string;
+  circuit: MotorsportCircuit | null;
+  /** Grid order, if qualifying has already run this weekend — empty otherwise. */
+  qualifyingResults: MotorsportResult[];
+}
+
 interface LocalAIContextValue {
   isReady: boolean;
   downloadProgress: number;
   error: string | null;
   analyzeMatchup: (args: AnalyzeArgs) => Promise<string>;
+  analyzeMotorsportEvent: (args: AnalyzeMotorsportArgs) => Promise<string>;
 }
 
 const LocalAIContext = createContext<LocalAIContextValue | null>(null);
@@ -84,6 +117,44 @@ function buildUserMessage(
     .join('\n');
 }
 
+function standingsLine(entries: MotorsportStandingEntry[], limit: number): string | null {
+  if (!entries.length) return null;
+  return entries
+    .slice(0, limit)
+    .map((e) => `${e.rank}. ${e.name} (${e.points} pts)`)
+    .join(', ');
+}
+
+function buildMotorsportUserMessage(args: AnalyzeMotorsportArgs, standings: MotorsportStandings): string {
+  const { leagueLabel, eventName, circuit, qualifyingResults } = args;
+  const circuitLine = circuit ? `Circuit: ${circuit.name}${circuit.location ? ` (${circuit.location})` : ''}.` : null;
+  const driversLine = standingsLine(standings.drivers, 5);
+  const constructorsLine = standingsLine(standings.constructors, 5);
+  const qualiLine = qualifyingResults.length
+    ? `Qualifying result (grid order): ${qualifyingResults
+        .slice(0, 5)
+        .map((r) => `${r.position}. ${r.driverName}`)
+        .join(', ')}.`
+    : 'Qualifying has not been run yet for this weekend.';
+  return [
+    `${leagueLabel} race weekend — ${eventName}.`,
+    circuitLine,
+    driversLine && `Driver championship standings so far: ${driversLine}.`,
+    constructorsLine && `Constructor championship standings so far: ${constructorsLine}.`,
+    qualiLine,
+  ]
+    .filter(Boolean)
+    .join('\n');
+}
+
+async function safeMotorsportStandings(leagueId: string): Promise<MotorsportStandings> {
+  try {
+    return await getMotorsportStandings(leagueId);
+  } catch {
+    return { drivers: [], constructors: [] };
+  }
+}
+
 async function safeInjuries(leagueId: string, teamId: string | null): Promise<TeamInjury[]> {
   if (!teamId) return [];
   try {
@@ -129,6 +200,14 @@ export function LocalAIProvider({ children }: { children: ReactNode }) {
               { home: homeInjuries, away: awayInjuries }
             ),
           },
+        ];
+        return llm.generate(chat);
+      },
+      analyzeMotorsportEvent: async (args) => {
+        const standings = await safeMotorsportStandings(args.leagueId);
+        const chat: Message[] = [
+          { role: 'system', content: MOTORSPORT_SYSTEM_PROMPT },
+          { role: 'user', content: buildMotorsportUserMessage(args, standings) },
         ];
         return llm.generate(chat);
       },

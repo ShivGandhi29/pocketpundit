@@ -652,14 +652,58 @@ function splitMotorsportEvents(events: MotorsportEvent[]): MotorsportSchedule {
   return { upcoming, past };
 }
 
+// The calendar gives no circuit/country field per event (only label/dates/a
+// private $ref) — confirmed live twice by fetching individual event detail
+// and finding only city/country text there, nothing per-event in the
+// calendar itself. Rather than firing off 25 extra detail requests just to
+// paint a flag on a list, this matches the sponsor-prefixed race name text
+// against its (fixed, well-known) host country. Ordered most-specific-first
+// so "Bahrain Grand Prix in Malaysia" — an actual 2026-calendar entry — hits
+// Malaysia, not Bahrain. Codes are IOC three-letter codes, confirmed live
+// against every driver-flag URL this session (ITA/GBR/NED/AUS/FRA/GER/ESP/
+// JPN/CAN/MEX/BRA among others all matched with zero deviation), which is
+// the same scheme ESPN's own flag CDN uses.
+const GP_COUNTRY: { match: RegExp; name: string; code: string }[] = [
+  { match: /in Malaysia/i, name: 'Malaysia', code: 'mas' },
+  { match: /Australian/i, name: 'Australia', code: 'aus' },
+  { match: /Chinese/i, name: 'China', code: 'chn' },
+  { match: /Japanese/i, name: 'Japan', code: 'jpn' },
+  { match: /Bahrain/i, name: 'Bahrain', code: 'brn' },
+  { match: /Saudi Arabian/i, name: 'Saudi Arabia', code: 'ksa' },
+  { match: /Miami|Las Vegas|United States/i, name: 'United States', code: 'usa' },
+  { match: /Canadian/i, name: 'Canada', code: 'can' },
+  { match: /^Monaco/i, name: 'Monaco', code: 'mon' },
+  { match: /Barcelona-Catalunya|Spanish/i, name: 'Spain', code: 'esp' },
+  { match: /Austrian/i, name: 'Austria', code: 'aut' },
+  { match: /British/i, name: 'Great Britain', code: 'gbr' },
+  { match: /Belgian/i, name: 'Belgium', code: 'bel' },
+  { match: /Hungarian/i, name: 'Hungary', code: 'hun' },
+  { match: /Dutch/i, name: 'Netherlands', code: 'ned' },
+  { match: /Italian/i, name: 'Italy', code: 'ita' },
+  { match: /Azerbaijan/i, name: 'Azerbaijan', code: 'aze' },
+  { match: /Singapore/i, name: 'Singapore', code: 'sgp' },
+  { match: /Mexico City/i, name: 'Mexico', code: 'mex' },
+  { match: /São Paulo|Sao Paulo/i, name: 'Brazil', code: 'bra' },
+  { match: /Qatar/i, name: 'Qatar', code: 'qat' },
+  { match: /Abu Dhabi/i, name: 'United Arab Emirates', code: 'uae' },
+];
+
+function deriveCountry(eventName: string): { countryName: string | null; countryFlag: string | null } {
+  const hit = GP_COUNTRY.find((c) => c.match.test(eventName));
+  if (!hit) return { countryName: null, countryFlag: null };
+  return { countryName: hit.name, countryFlag: `https://a.espncdn.com/i/teamlogos/countries/500/${hit.code}.png` };
+}
+
 function simplifyMotorsportSchedule(payload: any): MotorsportSchedule {
   const calendar = payload?.leagues?.[0]?.calendar ?? [];
   const events = calendar
-    .map((entry: any) => ({
+    .map((entry: any, index: number) => ({
       id: extractEventId(entry.event?.$ref),
       name: entry.label,
       date: entry.startDate,
       endDate: entry.endDate,
+      round: index + 1,
+      ...deriveCountry(entry.label ?? ''),
     }))
     .filter((e: MotorsportEvent) => e.id);
   return splitMotorsportEvents(events);

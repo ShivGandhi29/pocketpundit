@@ -1,12 +1,13 @@
 import { GlassView } from 'expo-glass-effect';
 import { Image } from 'expo-image';
-import { useEffect, useMemo, useState } from 'react';
+import { useEffect, useMemo, useRef, useState } from 'react';
 import { ActivityIndicator, Modal, Platform, Pressable, ScrollView, StyleSheet, View } from 'react-native';
 import { Text } from '@/components/AppText';
 import { SafeAreaProvider, SafeAreaView } from 'react-native-safe-area-context';
 
 import { getMotorsportEventDetail } from '@/services/api';
 import { GlassIconButton } from '@/components/GlassIconButton';
+import { useLocalAI } from '@/contexts/LocalAIContext';
 import { Colors, Radius, Spacing } from '@/constants/theme';
 import { Fonts } from '@/constants/fonts';
 import { formatLocalKickoff } from '@/utils/formatGameTime';
@@ -65,12 +66,22 @@ export function MotorsportDetailModal({
   const [error, setError] = useState<string | null>(null);
   const [activeSessionId, setActiveSessionId] = useState<string | null>(null);
 
+  const ai = useLocalAI();
+  const [aiStatus, setAiStatus] = useState<'idle' | 'loading' | 'done' | 'error'>('idle');
+  const [aiText, setAiText] = useState('');
+  // Same reasoning as GameDetailModal's requestGameId — this Modal stays
+  // mounted between events, so a slow in-flight analysis for a since-closed
+  // race could otherwise resolve and overwrite whatever's open by then.
+  const requestEventId = useRef<string | null>(null);
+
   useEffect(() => {
     if (!event) return;
     let cancelled = false;
     setDetail(null);
     setError(null);
     setActiveSessionId(null);
+    setAiStatus('idle');
+    setAiText('');
     getMotorsportEventDetail(leagueId, event.date)
       .then((result) => {
         if (cancelled) return;
@@ -87,6 +98,32 @@ export function MotorsportDetailModal({
 
   const sessionsWithResults = useMemo(() => detail?.sessions.filter((s) => s.results.length > 0) ?? [], [detail]);
   const activeSession = sessionsWithResults.find((s) => s.id === activeSessionId) ?? null;
+
+  function runAnalysis() {
+    if (!event || !detail) return;
+    const eventId = event.id;
+    requestEventId.current = eventId;
+    setAiStatus('loading');
+    setAiText('');
+    const qualifyingResults = detail.sessions.find((s) => s.label === 'Qual')?.results ?? [];
+    ai.analyzeMotorsportEvent({
+      leagueId,
+      leagueLabel,
+      eventName: event.name,
+      circuit: detail.circuit,
+      qualifyingResults,
+    })
+      .then((result) => {
+        if (requestEventId.current !== eventId) return;
+        setAiStatus('done');
+        setAiText(result || 'No analysis returned.');
+      })
+      .catch((err: unknown) => {
+        if (requestEventId.current !== eventId) return;
+        setAiStatus('error');
+        setAiText(`Analysis failed: ${err instanceof Error ? err.message : String(err)}`);
+      });
+  }
 
   return (
     <Modal visible={!!event} animationType="slide" presentationStyle="pageSheet" onRequestClose={onClose}>
@@ -117,7 +154,62 @@ export function MotorsportDetailModal({
               />
             ) : (
               <>
-                <Text style={styles.sectionHeading} accessibilityRole="header">
+                {/* Same reasoning as GameDetailModal: a prediction is only
+                    meaningful before the race is decided — once it's final
+                    there's nothing left to forecast. */}
+                {detail.state !== 'post' ? (
+                  <>
+                    <Text style={styles.analysisHeading} accessibilityRole="header">
+                      ✦ On-device AI analysis
+                    </Text>
+                    {ai.error ? (
+                      <Text style={styles.analysisError}>Local AI unavailable: {ai.error}</Text>
+                    ) : !ai.isReady ? (
+                      <View style={styles.loadingRow}>
+                        <ActivityIndicator color={Colors.accent} accessibilityLabel="Preparing on-device model" />
+                        <Text style={styles.loadingText}>
+                          {ai.downloadProgress > 0
+                            ? `Downloading on-device model… ${Math.round(ai.downloadProgress * 100)}%`
+                            : 'Preparing on-device model…'}
+                        </Text>
+                      </View>
+                    ) : aiStatus === 'idle' ? (
+                      <Pressable
+                        onPress={runAnalysis}
+                        accessibilityRole="button"
+                        accessibilityLabel="Analyze this race"
+                        style={({ pressed }) => [styles.analyzeBtn, pressed && styles.analyzeBtnPressed]}
+                      >
+                        <Text style={styles.analyzeBtnText}>Analyze this race</Text>
+                      </Pressable>
+                    ) : aiStatus === 'loading' ? (
+                      <View style={styles.loadingRow}>
+                        <ActivityIndicator color={Colors.accent} accessibilityLabel="Analyzing race" />
+                        <Text style={styles.loadingText}>Analyzing race weekend on-device…</Text>
+                      </View>
+                    ) : (
+                      <>
+                        <Text style={[styles.analysisBody, aiStatus === 'error' && styles.analysisError]}>{aiText}</Text>
+                        {aiStatus === 'done' ? (
+                          <Text style={styles.analysisDisclaimer}>
+                            AI-generated on-device — may be wrong, use as one input among others.
+                          </Text>
+                        ) : null}
+                        <Pressable
+                          onPress={runAnalysis}
+                          hitSlop={8}
+                          accessibilityRole="button"
+                          accessibilityLabel={aiStatus === 'error' ? 'Try again' : 'Re-analyze'}
+                          style={styles.reanalyzeBtn}
+                        >
+                          <Text style={styles.reanalyzeBtnText}>{aiStatus === 'error' ? 'Try again' : 'Re-analyze'}</Text>
+                        </Pressable>
+                      </>
+                    )}
+                  </>
+                ) : null}
+
+                <Text style={[styles.sectionHeading, styles.sectionHeadingSpaced]} accessibilityRole="header">
                   Sessions
                 </Text>
                 <View style={styles.sessionCard}>
@@ -193,6 +285,24 @@ const styles = StyleSheet.create({
   error: { color: Colors.live, fontSize: 14, textAlign: 'center', marginVertical: Spacing.s4 },
   empty: { color: Colors.textMuted, fontSize: 14 },
   sectionHeading: { color: Colors.accent, fontSize: 15, fontFamily: Fonts.bold, fontWeight: '700', marginBottom: Spacing.s2 },
+  sectionHeadingSpaced: { marginTop: Spacing.s5, paddingTop: Spacing.s4, borderTopWidth: 1, borderTopColor: Colors.border },
+  analysisHeading: { color: Colors.accent, fontSize: 15, fontFamily: Fonts.bold, fontWeight: '700', marginBottom: Spacing.s2 },
+  loadingRow: { flexDirection: 'row', alignItems: 'center', gap: Spacing.s2, minHeight: 60 },
+  loadingText: { color: Colors.textMuted, fontSize: 15 },
+  analysisBody: { color: Colors.text, fontSize: 15, lineHeight: 22 },
+  analysisDisclaimer: { color: Colors.textMuted, fontSize: 12, marginTop: Spacing.s2 },
+  analysisError: { color: Colors.live },
+  analyzeBtn: {
+    minHeight: 48,
+    borderRadius: Radius.sm,
+    backgroundColor: Colors.accent,
+    alignItems: 'center',
+    justifyContent: 'center',
+  },
+  analyzeBtnPressed: { opacity: 0.85 },
+  analyzeBtnText: { color: Colors.onAccent, fontFamily: Fonts.bold, fontWeight: '700', fontSize: 15 },
+  reanalyzeBtn: { alignSelf: 'flex-start', minHeight: 44, justifyContent: 'center', marginTop: Spacing.s2 },
+  reanalyzeBtnText: { color: Colors.accent, fontFamily: Fonts.semibold, fontWeight: '600', fontSize: 13 },
   sessionCard: {
     backgroundColor: Colors.surfaceRaised,
     borderRadius: Radius.md,

@@ -69,6 +69,11 @@ export interface MotorsportEvent {
   /** Race weekend start (first practice session), ISO UTC. */
   date: string;
   endDate: string;
+  /** 1-based position in the season calendar. */
+  round: number;
+  /** Host country, derived from the event name — null if it couldn't be matched. */
+  countryName: string | null;
+  countryFlag: string | null;
 }
 
 export interface MotorsportSchedule {

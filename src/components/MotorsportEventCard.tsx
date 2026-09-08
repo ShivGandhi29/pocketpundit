@@ -1,6 +1,7 @@
+import { Image } from 'expo-image';
 import { LinearGradient } from 'expo-linear-gradient';
 import { memo } from 'react';
-import { Pressable, StyleSheet } from 'react-native';
+import { Pressable, StyleSheet, View } from 'react-native';
 import { Text } from '@/components/AppText';
 
 import { Colors, Radius, Spacing } from '@/constants/theme';
@@ -37,9 +38,10 @@ export const MotorsportEventCard = memo(function MotorsportEventCard({
 }) {
   const state = weekendState(event);
   const dateRange = `${RANGE_FORMAT.format(new Date(event.date))} – ${RANGE_FORMAT.format(new Date(event.endDate))}`;
-  const label = `${event.name}, ${
-    state === 'past' ? `completed, ${dateRange}` : state === 'live' ? `live now, ${dateRange}` : `${dateRange}, starts ${formatKickoffTime(event.date)}`
-  }`;
+  const label = [
+    event.countryName ? `Round ${event.round}, ${event.countryName}` : event.name,
+    state === 'past' ? `completed, ${dateRange}` : state === 'live' ? `live now, ${dateRange}` : `${dateRange}, starts ${formatKickoffTime(event.date)}`,
+  ].join(', ');
 
   // Same idea as GameCard's two-team gradient split — a color wash fading
   // into the card's own dark surface — but with one subject instead of two,
@@ -64,6 +66,33 @@ export const MotorsportEventCard = memo(function MotorsportEventCard({
         end={{ x: 1, y: 0 }}
         style={[styles.card, featured && styles.cardFeatured]}
       >
+        {featured && state === 'pre' ? (
+          <View style={styles.nextBadge}>
+            <Text style={styles.nextBadgeText}>Next</Text>
+          </View>
+        ) : null}
+
+        {event.countryName ? (
+          <View style={styles.roundRow}>
+            {event.countryFlag ? (
+              <Image
+                source={{ uri: event.countryFlag }}
+                style={[styles.flag, featured && styles.flagFeatured]}
+                contentFit="cover"
+                accessibilityElementsHidden
+                importantForAccessibility="no"
+              />
+            ) : null}
+            <Text style={[styles.roundLabel, featured && styles.roundLabelFeatured]}>Round {event.round}</Text>
+          </View>
+        ) : null}
+
+        {event.countryName ? (
+          <Text style={[styles.country, featured && styles.countryFeatured]} numberOfLines={1}>
+            {event.countryName}
+          </Text>
+        ) : null}
+
         {state === 'pre' ? (
           <>
             <Text style={[styles.headlineTime, featured && styles.headlineTimeFeatured]}>{formatKickoffTime(event.date)}</Text>
@@ -100,6 +129,23 @@ const styles = StyleSheet.create({
     paddingHorizontal: Spacing.s5,
   },
   pressed: { opacity: 0.85 },
+  nextBadge: {
+    position: 'absolute',
+    top: Spacing.s4,
+    right: Spacing.s4,
+    backgroundColor: Colors.accent,
+    borderRadius: Radius.pill,
+    paddingHorizontal: Spacing.s3,
+    paddingVertical: 4,
+  },
+  nextBadgeText: { color: Colors.onAccent, fontSize: 12, fontFamily: Fonts.bold, fontWeight: '700' },
+  roundRow: { flexDirection: 'row', alignItems: 'center', gap: 6, marginBottom: 2 },
+  flag: { width: 16, height: 11, borderRadius: 2 },
+  flagFeatured: { width: 20, height: 14, borderRadius: 3 },
+  roundLabel: { color: Colors.textMuted, fontSize: 12, fontFamily: Fonts.semibold, fontWeight: '600' },
+  roundLabelFeatured: { fontSize: 14 },
+  country: { color: Colors.text, fontSize: 20, fontFamily: Fonts.extrabold, fontWeight: '800', letterSpacing: -0.3, marginBottom: Spacing.s2 },
+  countryFeatured: { fontSize: 34, marginBottom: Spacing.s3 },
   headlineTime: { color: Colors.text, fontSize: 22, fontFamily: Fonts.extrabold, fontWeight: '800', letterSpacing: -0.3 },
   headlineTimeFeatured: { fontSize: 40 },
   headlineDate: {
@@ -121,6 +167,6 @@ const styles = StyleSheet.create({
   },
   headlineStatusFeatured: { fontSize: 20, marginBottom: Spacing.s3 },
   headlineStatusLive: { color: Colors.live },
-  name: { color: Colors.text, fontSize: 16, fontFamily: Fonts.bold, fontWeight: '700', textAlign: 'center' },
-  nameFeatured: { fontSize: 26 },
+  name: { color: Colors.textMuted, fontSize: 13, fontFamily: Fonts.semibold, fontWeight: '600', textAlign: 'center' },
+  nameFeatured: { fontSize: 16 },
 });
