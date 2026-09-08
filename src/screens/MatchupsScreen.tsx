@@ -12,6 +12,7 @@ import { GameDetailModal } from '@/components/GameDetailModal';
 import { GlassIconButton } from '@/components/GlassIconButton';
 import { MotorsportDetailModal } from '@/components/MotorsportDetailModal';
 import { MotorsportEventCard } from '@/components/MotorsportEventCard';
+import { GamesListSkeleton } from '@/components/Skeleton';
 import { StandingsModal } from '@/components/StandingsModal';
 import { WeekStrip } from '@/components/WeekStrip';
 import { getGames, getMotorsportSchedule, getNflWeekCalendar } from '@/services/api';
@@ -302,15 +303,17 @@ export function MatchupsScreen({ leagues, state }: { leagues: League[]; state: A
 
       {isMotorsportTab ? (
         motorsportEvents === null ? (
-          <Text style={styles.empty} accessibilityLiveRegion="polite">
-            Loading schedule…
-          </Text>
+          <GamesListSkeleton count={3} />
         ) : motorsportError ? (
-          <Text style={styles.empty} accessibilityLiveRegion="polite">
-            Could not load schedule ({motorsportError}).
-          </Text>
+          <View style={styles.emptyState} accessibilityLiveRegion="polite">
+            <Ionicons name="cloud-offline-outline" size={28} color={Colors.textMuted} />
+            <Text style={styles.empty}>Could not load schedule ({motorsportError}).</Text>
+          </View>
         ) : motorsportEvents.length === 0 ? (
-          <Text style={styles.empty}>No races scheduled.</Text>
+          <View style={styles.emptyState}>
+            <Ionicons name="flag-outline" size={28} color={Colors.textMuted} />
+            <Text style={styles.empty}>No races scheduled.</Text>
+          </View>
         ) : (
           <FlatList
             data={motorsportEvents}
@@ -323,15 +326,17 @@ export function MatchupsScreen({ leagues, state }: { leagues: League[]; state: A
           />
         )
       ) : games === null ? (
-        <Text style={styles.empty} accessibilityLiveRegion="polite">
-          Loading matchups…
-        </Text>
+        <GamesListSkeleton />
       ) : error ? (
-        <Text style={styles.empty} accessibilityLiveRegion="polite">
-          Could not load games ({error}).
-        </Text>
+        <View style={styles.emptyState} accessibilityLiveRegion="polite">
+          <Ionicons name="cloud-offline-outline" size={28} color={Colors.textMuted} />
+          <Text style={styles.empty}>Could not load games ({error}).</Text>
+        </View>
       ) : visibleGames && visibleGames.length === 0 ? (
-        <Text style={styles.empty}>{emptyMessage}</Text>
+        <View style={styles.emptyState}>
+          <Ionicons name={favoritesOnly ? 'star-outline' : 'calendar-outline'} size={28} color={Colors.textMuted} />
+          <Text style={styles.empty}>{emptyMessage}</Text>
+        </View>
       ) : (
         <FlatList
           data={visibleGames ?? []}
@@ -416,5 +421,6 @@ const styles = StyleSheet.create({
   tabText: { color: Colors.text, fontSize: 12, fontFamily: Fonts.semibold, fontWeight: '600' },
   tabTextSelected: { color: Colors.onAccent },
   list: { padding: Spacing.s4, paddingTop: 0, gap: Spacing.s3 },
-  empty: { color: Colors.textMuted, textAlign: 'center', marginTop: Spacing.s6 },
+  emptyState: { alignItems: 'center', gap: Spacing.s2, marginTop: Spacing.s6, paddingHorizontal: Spacing.s4 },
+  empty: { color: Colors.textMuted, textAlign: 'center' },
 });

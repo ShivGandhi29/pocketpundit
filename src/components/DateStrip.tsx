@@ -1,5 +1,5 @@
 import { useMemo } from 'react';
-import { Pressable, StyleSheet, View } from 'react-native';
+import { Platform, Pressable, StyleSheet, View } from 'react-native';
 import { Text } from '@/components/AppText';
 import { GlassView } from 'expo-glass-effect';
 
@@ -84,7 +84,16 @@ export function DateStrip({
                 glassEffectStyle="regular"
                 isInteractive
                 tintColor={selected ? Colors.accent : undefined}
-                style={styles.dayCircle}
+                style={[
+                  styles.dayCircle,
+                  // GlassView's tintColor is an iOS-only Liquid Glass prop —
+                  // on Android/web it degrades to a plain View and silently
+                  // drops tintColor, leaving the circle with no background
+                  // at all. Since the accent fill is what makes the
+                  // near-black selected-day text legible, non-iOS needs an
+                  // explicit backgroundColor fallback here.
+                  selected && Platform.OS !== 'ios' && styles.dayCircleSelectedFallback,
+                ]}
               >
                 <Text style={[styles.dayNumber, selected && styles.textSelected]} maxFontSizeMultiplier={1.3}>
                   {day.getDate()}
@@ -132,10 +141,12 @@ const styles = StyleSheet.create({
     width: 42,
     height: 42,
     borderRadius: 21,
+    overflow: 'hidden',
     alignItems: 'center',
     justifyContent: 'center',
   },
   dayNumber: { color: Colors.text, fontSize: 15, fontFamily: Fonts.bold, fontWeight: '700' },
   textSelected: { color: Colors.onAccent },
+  dayCircleSelectedFallback: { backgroundColor: Colors.accent },
   todayDot: { width: 4, height: 4, borderRadius: 2, backgroundColor: Colors.accent },
 });

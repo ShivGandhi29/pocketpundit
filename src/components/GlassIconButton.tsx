@@ -1,15 +1,21 @@
 import { Ionicons } from '@expo/vector-icons';
 import { GlassView } from 'expo-glass-effect';
 import type { ComponentProps } from 'react';
-import { Pressable, StyleSheet } from 'react-native';
+import { Platform, Pressable, StyleSheet } from 'react-native';
 
 import { Colors, Radius } from '@/constants/theme';
 
 // GlassView renders Apple's iOS 26 Liquid Glass material and falls back to a
 // plain (transparent) View on older iOS, Android, and web on its own — no
-// Platform check needed here. Reserved for chrome/controls per Apple HIG
-// ("apply Liquid Glass to navigation and controls, keep content on its own
-// layer"), not for dense content surfaces like game cards or stat tables.
+// Platform check needed here for the *decorative* glass look. Reserved for
+// chrome/controls per Apple HIG ("apply Liquid Glass to navigation and
+// controls, keep content on its own layer"), not for dense content surfaces
+// like game cards or stat tables.
+//
+// `tintColor` is the exception: it's an iOS-only GlassView prop that a plain
+// View silently drops, so the `active` accent fill needs an explicit
+// non-iOS backgroundColor fallback below — without it, `onAccent` icon color
+// is invisible with no accent circle behind it.
 export function GlassIconButton({
   name,
   size = 22,
@@ -50,7 +56,11 @@ export function GlassIconButton({
         glassEffectStyle="regular"
         isInteractive
         tintColor={active ? Colors.accent : undefined}
-        style={[styles.circle, disabled && styles.disabled]}
+        style={[
+          styles.circle,
+          active && Platform.OS !== 'ios' && styles.activeFallback,
+          disabled && styles.disabled,
+        ]}
       >
         <Ionicons name={name} size={size} color={active ? Colors.onAccent : color} />
       </GlassView>
@@ -60,5 +70,6 @@ export function GlassIconButton({
 
 const styles = StyleSheet.create({
   circle: { width: 48, height: 48, borderRadius: Radius.pill, alignItems: 'center', justifyContent: 'center' },
+  activeFallback: { backgroundColor: Colors.accent },
   disabled: { opacity: 0.35 },
 });
