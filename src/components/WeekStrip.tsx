@@ -1,7 +1,7 @@
 import { FlatList, Pressable, StyleSheet } from 'react-native';
 import { Text } from '@/components/AppText';
 
-import { Colors, Radius, Spacing } from '@/constants/theme';
+import { Colors, Elevation, Radius, Spacing } from '@/constants/theme';
 import { Fonts } from '@/constants/fonts';
 import type { SeasonWeek } from '@/types/pocketpundit';
 
@@ -34,7 +34,7 @@ export function WeekStrip({
             accessibilityRole="button"
             accessibilityLabel={`${item.shortLabel}, ${MONTH_DAY.format(new Date(item.startDate))}`}
             accessibilityState={{ selected }}
-            style={[styles.pill, selected && styles.pillSelected]}
+            style={[styles.pill, selected && styles.pillSelected, selected && Elevation.medium]}
           >
             <Text style={[styles.weekLabel, selected && styles.textSelected]} numberOfLines={1} maxFontSizeMultiplier={1.3}>
               {item.shortLabel}
@@ -61,7 +61,7 @@ const styles = StyleSheet.create({
     paddingHorizontal: Spacing.s1,
     alignItems: 'center',
     justifyContent: 'center',
-    borderRadius: Radius.md,
+    borderRadius: Radius.lg,
     borderWidth: 1,
     borderColor: Colors.border,
     backgroundColor: Colors.surface,

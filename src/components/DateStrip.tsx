@@ -1,108 +1,53 @@
-import { useMemo } from 'react';
 import { Platform, Pressable, StyleSheet, View } from 'react-native';
 import { Text } from '@/components/AppText';
 import { GlassView } from 'expo-glass-effect';
 
-import { GlassIconButton } from '@/components/GlassIconButton';
 import { Colors, Radius, Spacing } from '@/constants/theme';
 import { Fonts } from '@/constants/fonts';
-import { addDays, dateWithOffset, isSameLocalDay } from '@/utils/formatGameTime';
 
-const WEEKDAY = new Intl.DateTimeFormat(undefined, { weekday: 'short' });
-const MONTH_YEAR = new Intl.DateTimeFormat(undefined, { month: 'long', year: 'numeric' });
+export type CalendarMode = 'yesterday' | 'today' | 'upcoming';
 
-export function DateStrip({
-  selectedDate,
-  onSelectDate,
-}: {
-  selectedDate: Date;
-  onSelectDate: (date: Date) => void;
-}) {
-  const today = useMemo(() => dateWithOffset(0), []);
-  const isOnToday = isSameLocalDay(selectedDate, today);
+const MODES: { id: CalendarMode; label: string }[] = [
+  { id: 'yesterday', label: 'Yesterday' },
+  { id: 'today', label: 'Today' },
+  { id: 'upcoming', label: 'Upcoming' },
+];
 
-  // A fixed Sun-Sat week containing the selected day, calendar-grid style —
-  // the chevrons page a week at a time and land on the same weekday, rather
-  // than free-scrolling through an arbitrary rolling window of dates.
-  const weekDays = useMemo(() => {
-    const weekStart = addDays(selectedDate, -selectedDate.getDay());
-    return Array.from({ length: 7 }, (_, i) => addDays(weekStart, i));
-  }, [selectedDate]);
-
+// Apple Sports (see apple.com/newsroom, Feb 2024) replaces a per-day
+// calendar grid with exactly three relative buckets: what just finished,
+// what's on right now, and what's next — not an arbitrary date picker.
+// Segment styling follows the same "N glass pills in a row, selected one
+// tinted" pattern already used for the league tabs and stat tabs elsewhere
+// in this app, rather than a from-scratch sliding-thumb segmented control.
+export function DateStrip({ mode, onSelectMode }: { mode: CalendarMode; onSelectMode: (mode: CalendarMode) => void }) {
   return (
     <View style={styles.container}>
-      <View style={styles.header}>
-        <GlassIconButton
-          name="chevron-back"
-          size={20}
-          onPress={() => onSelectDate(addDays(selectedDate, -7))}
-          accessibilityLabel="Previous week"
-          hitSlop={8}
-        />
-        <Text style={styles.monthLabel} accessibilityRole="header">
-          {MONTH_YEAR.format(selectedDate)}
-        </Text>
-        <GlassIconButton
-          name="chevron-forward"
-          size={20}
-          onPress={() => onSelectDate(addDays(selectedDate, 7))}
-          accessibilityLabel="Next week"
-          hitSlop={8}
-        />
-        {!isOnToday ? (
-          <View style={styles.todayBtn}>
-            <GlassIconButton
-              name="today-outline"
-              size={18}
-              color={Colors.accent}
-              onPress={() => onSelectDate(today)}
-              accessibilityLabel="Jump to today"
-              hitSlop={8}
-            />
-          </View>
-        ) : null}
-      </View>
-
-      <View style={styles.week}>
-        {weekDays.map((day) => {
-          const selected = isSameLocalDay(day, selectedDate);
-          const isToday = isSameLocalDay(day, today);
-          const label = `${WEEKDAY.format(day)} ${day.getDate()}${isToday ? ', today' : ''}`;
+      <View style={styles.row}>
+        {MODES.map((m) => {
+          const selected = m.id === mode;
           return (
             <Pressable
-              key={day.toISOString()}
-              onPress={() => onSelectDate(day)}
-              accessibilityRole="button"
-              accessibilityLabel={label}
+              key={m.id}
+              onPress={() => onSelectMode(m.id)}
+              accessibilityRole="tab"
+              accessibilityLabel={m.label}
               accessibilityState={{ selected }}
-              style={styles.dayCol}
+              style={styles.segmentFlex}
             >
-              <Text style={styles.weekday} maxFontSizeMultiplier={1.3}>
-                {WEEKDAY.format(day).toUpperCase()}
-              </Text>
               <GlassView
                 glassEffectStyle="regular"
                 isInteractive
                 tintColor={selected ? Colors.accent : undefined}
                 style={[
-                  styles.dayCircle,
-                  // GlassView's tintColor is an iOS-only Liquid Glass prop —
-                  // on Android/web it degrades to a plain View and silently
-                  // drops tintColor, leaving the circle with no background
-                  // at all. Since the accent fill is what makes the
-                  // near-black selected-day text legible, non-iOS needs an
-                  // explicit backgroundColor fallback here.
-                  selected && Platform.OS !== 'ios' && styles.dayCircleSelectedFallback,
+                  styles.segment,
+                  // GlassView's tintColor is iOS-only — Android/web drop it
+                  // silently and fall back to a plain transparent View, so
+                  // the accent fill needs an explicit non-iOS fallback.
+                  selected && Platform.OS !== 'ios' && styles.segmentSelectedFallback,
                 ]}
               >
-                <Text style={[styles.dayNumber, selected && styles.textSelected]} maxFontSizeMultiplier={1.3}>
-                  {day.getDate()}
-                </Text>
+                <Text style={[styles.label, selected && styles.labelSelected]}>{m.label}</Text>
               </GlassView>
-              {/* Fixed-size View with toggled opacity, not a toggled text
-                  glyph — a dot swapped in via text content measures a
-                  different line-height than its siblings and shifts layout. */}
-              <View style={[styles.todayDot, { opacity: isToday ? 1 : 0 }]} />
             </Pressable>
           );
         })}
@@ -112,41 +57,11 @@ export function DateStrip({
 }
 
 const styles = StyleSheet.create({
-  container: {
-    paddingHorizontal: Spacing.s4,
-    paddingVertical: Spacing.s2,
-    gap: Spacing.s2,
-  },
-  header: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    justifyContent: 'center',
-    gap: Spacing.s3,
-    // Tall enough for GlassIconButton's 48px touch area, not just its 40px
-    // resting glass circle — a box sized to the circle clips the Liquid
-    // Glass press-bloom animation at the top/bottom edges.
-    height: 48,
-  },
-  // Absolutely positioned so it doesn't disturb the centered chevron/month
-  // group — it only appears once the user has navigated away from today.
-  todayBtn: { position: 'absolute', right: 0, top: 0, bottom: 0, justifyContent: 'center' },
-  monthLabel: { color: Colors.text, fontSize: 16, fontFamily: Fonts.bold, fontWeight: '700', minWidth: 148, textAlign: 'center' },
-  week: { flexDirection: 'row', justifyContent: 'space-between' },
-  dayCol: { alignItems: 'center', gap: 4, width: 42 },
-  weekday: { color: Colors.textMuted, fontSize: 11, fontFamily: Fonts.bold, fontWeight: '700', letterSpacing: 0.3 },
-  // Bigger than the day number strictly needs — the glass element's own
-  // bounds clip its interactive press-bloom, so it needs headroom around its
-  // content rather than being sized tightly to it.
-  dayCircle: {
-    width: 42,
-    height: 42,
-    borderRadius: 21,
-    overflow: 'hidden',
-    alignItems: 'center',
-    justifyContent: 'center',
-  },
-  dayNumber: { color: Colors.text, fontSize: 15, fontFamily: Fonts.bold, fontWeight: '700' },
-  textSelected: { color: Colors.onAccent },
-  dayCircleSelectedFallback: { backgroundColor: Colors.accent },
-  todayDot: { width: 4, height: 4, borderRadius: 2, backgroundColor: Colors.accent },
+  container: { paddingHorizontal: Spacing.s4, paddingVertical: Spacing.s2 },
+  row: { flexDirection: 'row', gap: Spacing.s2 },
+  segmentFlex: { flex: 1 },
+  segment: { minHeight: 44, borderRadius: Radius.pill, alignItems: 'center', justifyContent: 'center' },
+  segmentSelectedFallback: { backgroundColor: Colors.accent },
+  label: { color: Colors.text, fontSize: 14, fontFamily: Fonts.bold, fontWeight: '700' },
+  labelSelected: { color: Colors.onAccent },
 });

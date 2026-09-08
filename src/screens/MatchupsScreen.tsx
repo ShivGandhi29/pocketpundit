@@ -1,12 +1,12 @@
 import { Ionicons } from '@expo/vector-icons';
 import { useRouter } from 'expo-router';
 import { useCallback, useEffect, useMemo, useState } from 'react';
-import { FlatList, Image, Pressable, RefreshControl, StyleSheet, View } from 'react-native';
+import { FlatList, Image, Pressable, RefreshControl, SectionList, StyleSheet, View } from 'react-native';
 import { Text } from '@/components/AppText';
 import { GlassView } from 'expo-glass-effect';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 
-import { DateStrip } from '@/components/DateStrip';
+import { DateStrip, type CalendarMode } from '@/components/DateStrip';
 import { GameCard } from '@/components/GameCard';
 import { GameDetailModal } from '@/components/GameDetailModal';
 import { GlassIconButton } from '@/components/GlassIconButton';
@@ -18,14 +18,29 @@ import { WeekStrip } from '@/components/WeekStrip';
 import { getGames, getMotorsportSchedule, getNflWeekCalendar } from '@/services/api';
 import { Colors, Radius, Spacing } from '@/constants/theme';
 import { Fonts } from '@/constants/fonts';
-import { addDays, dateWithOffset, isSameLocalDay, toEspnDateParam } from '@/utils/formatGameTime';
+import {
+  addDays,
+  dateWithOffset,
+  formatAgendaSectionLabel,
+  isSameLocalDay,
+  toEspnDateParam,
+} from '@/utils/formatGameTime';
 import type { AppState, Game, League, MotorsportEvent, WeekCalendar } from '@/types/pocketpundit';
+
+// How many days ahead the "Upcoming" agenda looks — long enough to be
+// useful, short enough not to fan out into dozens of parallel ESPN requests
+// per league (each day is one request per league; "All" with several
+// leagues selected already multiplies this).
+const UPCOMING_DAYS = 5;
+
+type UpcomingSection = { date: Date; games: Game[] };
 
 export function MatchupsScreen({ leagues, state }: { leagues: League[]; state: AppState }) {
   const router = useRouter();
   const insets = useSafeAreaInsets();
   const [activeTab, setActiveTab] = useState('all');
-  const [selectedDate, setSelectedDate] = useState(() => dateWithOffset(0));
+  const [calendarMode, setCalendarMode] = useState<CalendarMode>('today');
+  const today = useMemo(() => dateWithOffset(0), []);
   // NFL browses by named week (Preseason Week 2, Week 1, playoff rounds...)
   // rather than by calendar day the way the other leagues do — see
   // getNflWeekCalendar in services/api.ts.
@@ -33,6 +48,7 @@ export function MatchupsScreen({ leagues, state }: { leagues: League[]; state: A
   const [selectedWeekIndex, setSelectedWeekIndex] = useState<number | null>(null);
   const [favoritesOnly, setFavoritesOnly] = useState(false);
   const [games, setGames] = useState<Game[] | null>(null);
+  const [upcomingSections, setUpcomingSections] = useState<UpcomingSection[] | null>(null);
   const [error, setError] = useState<string | null>(null);
   const [refreshing, setRefreshing] = useState(false);
   const [openGame, setOpenGame] = useState<Game | null>(null);
@@ -76,6 +92,15 @@ export function MatchupsScreen({ leagues, state }: { leagues: League[]; state: A
     (game: Game) => isFavoriteTeam(game.home.id) || isFavoriteTeam(game.away.id),
     [isFavoriteTeam]
   );
+  const compareByFavoriteThenTime = useCallback(
+    (a: Game, b: Game) => {
+      const favA = isFavoriteGame(a);
+      const favB = isFavoriteGame(b);
+      if (favA !== favB) return favA ? -1 : 1;
+      return new Date(a.date).getTime() - new Date(b.date).getTime();
+    },
+    [isFavoriteGame]
+  );
 
   const tabs = useMemo(
     () => [
@@ -90,6 +115,15 @@ export function MatchupsScreen({ leagues, state }: { leagues: League[]; state: A
 
   const selectedWeek =
     isNflWeekTab && nflCalendar && selectedWeekIndex != null ? nflCalendar.weeks[selectedWeekIndex] : null;
+  // "Yesterday"/"Today" still need the single specific day the fetch below
+  // is grounded on; "Upcoming" has no single day, so this is only consulted
+  // by the non-NFL, non-upcoming branch. Memoized so its identity is stable
+  // across re-renders — `addDays` always returns a new Date object, and an
+  // unmemoized one here made `loadGames` (which depends on it) get a new
+  // identity on every render while on the Yesterday tab, which retriggered
+  // the effect that resets `games` to null and re-fetches, flickering the
+  // skeleton loader continuously instead of settling once data arrived.
+  const singleDate = useMemo(() => (calendarMode === 'yesterday' ? addDays(today, -1) : today), [calendarMode, today]);
 
   const loadGames = useCallback(async () => {
     if (isMotorsportTab) return;
@@ -100,16 +134,70 @@ export function MatchupsScreen({ leagues, state }: { leagues: League[]; state: A
         ? state.selectedLeagueIds.filter((id) => leagues.find((l) => l.id === id)?.kind !== 'motorsport')
         : [activeTab];
     setError(null);
+
+    if (isNflWeekTab && selectedWeek) {
+      try {
+        const results = await Promise.all(
+          leagueIds.map(async (id) => {
+            const games = await getGames(id, { week: selectedWeek.weekValue, seasonType: selectedWeek.seasonTypeValue });
+            return { id, games };
+          })
+        );
+        const flat = results.flatMap(({ id, games: leagueGames }) =>
+          leagueGames.map((g) => ({ ...g, leagueId: id }) as Game)
+        );
+        flat.sort(compareByFavoriteThenTime);
+        setUpcomingSections(null);
+        setGames(flat);
+      } catch (err) {
+        setError(err instanceof Error ? err.message : 'Could not load games');
+        setGames([]);
+      }
+      return;
+    }
+
+    if (calendarMode === 'upcoming') {
+      try {
+        const dayOffsets = Array.from({ length: UPCOMING_DAYS }, (_, i) => i + 1);
+        // No ±1-bucket correction here (unlike below) — for a multi-day
+        // overview a game landing under the adjacent date's heading is a
+        // minor cosmetic miss, not worth tripling the request count for
+        // every league × every day in the window.
+        const perLeague = await Promise.all(
+          leagueIds.map(async (id) => {
+            const perDay = await Promise.all(
+              dayOffsets.map(async (offset) => {
+                const games = await getGames(id, { date: toEspnDateParam(addDays(today, offset)) });
+                return games.map((g) => ({ ...g, leagueId: id }) as Game);
+              })
+            );
+            return perDay.flat();
+          })
+        );
+        const byDay = new Map<string, UpcomingSection>();
+        for (const game of perLeague.flat()) {
+          const gameDate = new Date(game.date);
+          const key = toEspnDateParam(gameDate);
+          if (!byDay.has(key)) {
+            byDay.set(key, { date: new Date(gameDate.getFullYear(), gameDate.getMonth(), gameDate.getDate()), games: [] });
+          }
+          byDay.get(key)!.games.push(game);
+        }
+        const sections = Array.from(byDay.values())
+          .sort((a, b) => a.date.getTime() - b.date.getTime())
+          .map((section) => ({ ...section, games: [...section.games].sort(compareByFavoriteThenTime) }));
+        setGames(null);
+        setUpcomingSections(sections);
+      } catch (err) {
+        setError(err instanceof Error ? err.message : 'Could not load games');
+        setUpcomingSections([]);
+      }
+      return;
+    }
+
     try {
       const results = await Promise.all(
         leagueIds.map(async (id) => {
-          if (id === 'nfl' && selectedWeek) {
-            const games = await getGames(id, {
-              week: selectedWeek.weekValue,
-              seasonType: selectedWeek.seasonTypeValue,
-            });
-            return { id, games };
-          }
           // ESPN's `dates` param doesn't bucket by UTC or local calendar day —
           // verified live it's closer to a US-evening "game night" window
           // (e.g. dates=20260828 returned events from 22:00 UTC through
@@ -120,11 +208,11 @@ export function MatchupsScreen({ leagues, state }: { leagues: League[]; state: A
           // keep only the events that actually fall on the selected day once
           // converted to the device's own local time.
           const buckets = await Promise.all(
-            [-1, 0, 1].map((offset) => getGames(id, { date: toEspnDateParam(addDays(selectedDate, offset)) }))
+            [-1, 0, 1].map((offset) => getGames(id, { date: toEspnDateParam(addDays(singleDate, offset)) }))
           );
           const seen = new Set<string>();
           const games = buckets.flat().filter((g) => {
-            if (seen.has(g.id) || !isSameLocalDay(new Date(g.date), selectedDate)) return false;
+            if (seen.has(g.id) || !isSameLocalDay(new Date(g.date), singleDate)) return false;
             seen.add(g.id);
             return true;
           });
@@ -134,22 +222,30 @@ export function MatchupsScreen({ leagues, state }: { leagues: League[]; state: A
       const flat = results.flatMap(({ id, games: leagueGames }) =>
         leagueGames.map((g) => ({ ...g, leagueId: id }) as Game)
       );
-      flat.sort((a, b) => {
-        const favA = isFavoriteGame(a);
-        const favB = isFavoriteGame(b);
-        if (favA !== favB) return favA ? -1 : 1;
-        return new Date(a.date).getTime() - new Date(b.date).getTime();
-      });
+      flat.sort(compareByFavoriteThenTime);
+      setUpcomingSections(null);
       setGames(flat);
     } catch (err) {
       setError(err instanceof Error ? err.message : 'Could not load games');
       setGames([]);
     }
-  }, [activeTab, state.selectedLeagueIds, selectedDate, selectedWeek, isFavoriteGame, isMotorsportTab, leagues]);
+  }, [
+    activeTab,
+    state.selectedLeagueIds,
+    calendarMode,
+    singleDate,
+    today,
+    selectedWeek,
+    isNflWeekTab,
+    compareByFavoriteThenTime,
+    isMotorsportTab,
+    leagues,
+  ]);
 
   useEffect(() => {
     if (isMotorsportTab) return;
     setGames(null);
+    setUpcomingSections(null);
     loadGames();
   }, [loadGames, isMotorsportTab]);
 
@@ -192,10 +288,22 @@ export function MatchupsScreen({ leagues, state }: { leagues: League[]; state: A
   }
 
   const visibleGames = favoritesOnly ? (games ?? []).filter(isFavoriteGame) : games;
+  const visibleUpcomingSections = useMemo(() => {
+    if (!upcomingSections) return upcomingSections;
+    if (!favoritesOnly) return upcomingSections;
+    return upcomingSections
+      .map((section) => ({ ...section, games: section.games.filter(isFavoriteGame) }))
+      .filter((section) => section.games.length > 0);
+  }, [upcomingSections, favoritesOnly, isFavoriteGame]);
   const hasFavorites = Object.keys(state.favoriteTeams).length > 0;
-  const emptyMessage = favoritesOnly
-    ? `No favorite-team games ${isNflWeekTab ? 'this week' : 'on this date'}.`
-    : `No games scheduled ${isNflWeekTab ? 'this week' : 'on this date'}.`;
+  const periodLabel = isNflWeekTab
+    ? 'this week'
+    : calendarMode === 'yesterday'
+      ? 'yesterday'
+      : calendarMode === 'today'
+        ? 'today'
+        : `in the next ${UPCOMING_DAYS} days`;
+  const emptyMessage = favoritesOnly ? `No favorite-team games ${periodLabel}.` : `No games scheduled ${periodLabel}.`;
 
   return (
     <View style={[styles.container, { paddingTop: insets.top }]}>
@@ -297,7 +405,7 @@ export function MatchupsScreen({ leagues, state }: { leagues: League[]; state: A
             ) : null}
           </View>
         ) : (
-          <DateStrip selectedDate={selectedDate} onSelectDate={setSelectedDate} />
+          <DateStrip mode={calendarMode} onSelectMode={setCalendarMode} />
         )
       ) : null}
 
@@ -325,24 +433,60 @@ export function MatchupsScreen({ leagues, state }: { leagues: League[]; state: A
             )}
           />
         )
-      ) : games === null ? (
+      ) : isNflWeekTab || calendarMode !== 'upcoming' ? (
+        games === null ? (
+          <GamesListSkeleton />
+        ) : error ? (
+          <View style={styles.emptyState} accessibilityLiveRegion="polite">
+            <Ionicons name="cloud-offline-outline" size={28} color={Colors.textMuted} />
+            <Text style={styles.empty}>Could not load games ({error}).</Text>
+          </View>
+        ) : visibleGames && visibleGames.length === 0 ? (
+          <View style={styles.emptyState}>
+            <Ionicons name={favoritesOnly ? 'star-outline' : 'calendar-outline'} size={28} color={Colors.textMuted} />
+            <Text style={styles.empty}>{emptyMessage}</Text>
+          </View>
+        ) : (
+          <FlatList
+            data={visibleGames ?? []}
+            keyExtractor={(g) => g.id}
+            contentContainerStyle={[styles.list, { paddingBottom: Spacing.s4 + insets.bottom }]}
+            refreshControl={<RefreshControl refreshing={refreshing} onRefresh={onRefresh} tintColor={Colors.accent} />}
+            renderItem={({ item }) => (
+              <GameCard game={item} favorite={isFavoriteGame(item)} onPress={() => setOpenGame(item)} />
+            )}
+          />
+        )
+      ) : visibleUpcomingSections === null ? (
         <GamesListSkeleton />
       ) : error ? (
         <View style={styles.emptyState} accessibilityLiveRegion="polite">
           <Ionicons name="cloud-offline-outline" size={28} color={Colors.textMuted} />
           <Text style={styles.empty}>Could not load games ({error}).</Text>
         </View>
-      ) : visibleGames && visibleGames.length === 0 ? (
+      ) : visibleUpcomingSections.length === 0 ? (
         <View style={styles.emptyState}>
           <Ionicons name={favoritesOnly ? 'star-outline' : 'calendar-outline'} size={28} color={Colors.textMuted} />
           <Text style={styles.empty}>{emptyMessage}</Text>
         </View>
       ) : (
-        <FlatList
-          data={visibleGames ?? []}
+        <SectionList
+          sections={visibleUpcomingSections.map((section) => ({
+            title: formatAgendaSectionLabel(section.date, today),
+            data: section.games,
+          }))}
           keyExtractor={(g) => g.id}
           contentContainerStyle={[styles.list, { paddingBottom: Spacing.s4 + insets.bottom }]}
           refreshControl={<RefreshControl refreshing={refreshing} onRefresh={onRefresh} tintColor={Colors.accent} />}
+          // Sticky headers default on for SectionList on iOS; a floating header
+          // over a dense card list reads as a rendering glitch more than a
+          // useful affordance here, so it's off.
+          stickySectionHeadersEnabled={false}
+          renderSectionHeader={({ section }) => (
+            <Text style={styles.sectionHeader} accessibilityRole="header">
+              {section.title}
+            </Text>
+          )}
           renderItem={({ item }) => (
             <GameCard game={item} favorite={isFavoriteGame(item)} onPress={() => setOpenGame(item)} />
           )}
@@ -423,4 +567,13 @@ const styles = StyleSheet.create({
   list: { padding: Spacing.s4, paddingTop: 0, gap: Spacing.s3 },
   emptyState: { alignItems: 'center', gap: Spacing.s2, marginTop: Spacing.s6, paddingHorizontal: Spacing.s4 },
   empty: { color: Colors.textMuted, textAlign: 'center' },
+  sectionHeader: {
+    color: Colors.text,
+    fontSize: 15,
+    fontFamily: Fonts.bold,
+    fontWeight: '700',
+    marginTop: Spacing.s1,
+    marginBottom: Spacing.s1,
+    backgroundColor: Colors.background,
+  },
 });

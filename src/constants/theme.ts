@@ -1,3 +1,5 @@
+import { Platform } from 'react-native';
+
 // PocketPundit is dark-mode-only by design (same as the web prototype's
 // `color-scheme: dark`), so there's no light palette to switch to.
 export const Colors = {
@@ -28,4 +30,23 @@ export const Radius = {
   md: 14,
   lg: 20,
   pill: 999,
+} as const;
+
+// Shadow-based elevation for surfaces raised off the near-black background —
+// a subtle shadow disappears entirely against `Colors.background`, so these
+// have to be heavier than a typical light-mode shadow to read at all.
+// `medium` lifts small interactive elements (a selected calendar day);
+// `high` is for anything meant to feel like the primary focal point on
+// screen (a primary CTA).
+export const Elevation = {
+  medium: Platform.select({
+    ios: { shadowColor: '#000000', shadowOffset: { width: 0, height: 4 }, shadowOpacity: 0.35, shadowRadius: 8 },
+    android: { elevation: 6 },
+    default: {},
+  }),
+  high: Platform.select({
+    ios: { shadowColor: '#000000', shadowOffset: { width: 0, height: 8 }, shadowOpacity: 0.5, shadowRadius: 24 },
+    android: { elevation: 10 },
+    default: {},
+  }),
 } as const;

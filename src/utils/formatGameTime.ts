@@ -69,3 +69,12 @@ export function addDays(date: Date, days: number): Date {
 export function isSameLocalDay(a: Date, b: Date): boolean {
   return a.getFullYear() === b.getFullYear() && a.getMonth() === b.getMonth() && a.getDate() === b.getDate();
 }
+
+const AGENDA_SECTION_DATE = new Intl.DateTimeFormat(undefined, { weekday: 'long', month: 'short', day: 'numeric' });
+
+/** Section-header label for an "Upcoming" agenda list — "Tomorrow" for the
+ * very next day, otherwise a full weekday + date (e.g. "Thursday, Sep 10"). */
+export function formatAgendaSectionLabel(date: Date, today: Date): string {
+  if (isSameLocalDay(date, addDays(today, 1))) return 'Tomorrow';
+  return AGENDA_SECTION_DATE.format(date);
+}

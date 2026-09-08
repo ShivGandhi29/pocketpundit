@@ -1,8 +1,8 @@
 import { Pressable, StyleSheet, type StyleProp, type ViewStyle } from 'react-native';
 import { Text } from '@/components/AppText';
 
-import { ButtonLabel, HeavyElevation, OutlinePillBorder } from '@/constants/onboardingTheme';
-import { Colors, Radius, Spacing } from '@/constants/theme';
+import { ButtonLabel, OutlinePillBorder } from '@/constants/onboardingTheme';
+import { Colors, Elevation, Radius, Spacing } from '@/constants/theme';
 import { Fonts } from '@/constants/fonts';
 
 // Full-pill button with an uppercase, wide-tracked label — see
@@ -35,7 +35,7 @@ export function PillButton({
       style={({ pressed }) => [
         styles.base,
         variant === 'primary' ? styles.primary : styles.outline,
-        variant === 'primary' && !disabled ? HeavyElevation : null,
+        variant === 'primary' && !disabled ? Elevation.high : null,
         disabled && styles.disabled,
         pressed && !disabled && styles.pressed,
         style,
