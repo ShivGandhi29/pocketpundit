@@ -723,13 +723,37 @@ const GP_COUNTRY: { match: RegExp; name: string; code: string }[] = [
   { match: /Abu Dhabi/i, name: 'United Arab Emirates', code: 'uae' },
 ];
 
-function deriveCountry(eventName: string): { countryName: string | null; countryFlag: string | null } {
-  const hit = GP_COUNTRY.find((c) => c.match.test(eventName));
-  if (!hit) return { countryName: null, countryFlag: null };
-  return { countryName: hit.name, countryFlag: `https://a.espncdn.com/i/teamlogos/countries/500/${hit.code}.png` };
+// NASCAR's own name pattern — live-checked against the full 2026 calendar:
+// "NASCAR Cup Series at Kansas", "... at Bristol", "Clash at Bowman Gray" —
+// a trailing "at {location}" the F1 table has no reason to match. Unlike
+// GP_COUNTRY this isn't a country lookup, just whatever ESPN calls the
+// place (sometimes a US state, "Kansas"/"Texas"/"Michigan"/"Iowa"/"New
+// Hampshire" in this season's calendar; more often a city or track name).
+// Events with no "at" at all ("Daytona 500", "Duel #1") correctly fall
+// through to null, leaving the card's existing event-name fallback.
+const TRAILING_LOCATION = / at (.+)$/i;
+
+function deriveLocation(eventName: string, leagueId: string): { locationName: string | null; locationFlag: string | null } {
+  // GP_COUNTRY is an F1-only naming pattern ("[Sponsor] [Country] Grand
+  // Prix") — gated to leagueId 'f1' specifically rather than tried against
+  // every motorsport-kind league. Live-checked bug this scoping fixes:
+  // without it, "NASCAR Cup Series at Las Vegas" false-matched GP_COUNTRY's
+  // "Las Vegas" entry (there for F1's actual Las Vegas Grand Prix) and
+  // mislabeled the race "United States" with a national flag instead of
+  // showing "Las Vegas" like every other city-named NASCAR race.
+  if (leagueId === 'f1') {
+    const gpHit = GP_COUNTRY.find((c) => c.match.test(eventName));
+    if (gpHit) {
+      return { locationName: gpHit.name, locationFlag: `https://a.espncdn.com/i/teamlogos/countries/500/${gpHit.code}.png` };
+    }
+  }
+  const locationHit = eventName.match(TRAILING_LOCATION);
+  // Never fabricate a flag for a city/state match — a real national flag
+  // only ever comes from the GP_COUNTRY branch above.
+  return { locationName: locationHit?.[1] ?? null, locationFlag: null };
 }
 
-function simplifyMotorsportSchedule(payload: any): MotorsportSchedule {
+function simplifyMotorsportSchedule(payload: any, leagueId: string): MotorsportSchedule {
   const calendar = payload?.leagues?.[0]?.calendar ?? [];
   const events = calendar
     .map((entry: any, index: number) => ({
@@ -738,7 +762,7 @@ function simplifyMotorsportSchedule(payload: any): MotorsportSchedule {
       date: entry.startDate,
       endDate: entry.endDate,
       round: index + 1,
-      ...deriveCountry(entry.label ?? ''),
+      ...deriveLocation(entry.label ?? '', leagueId),
     }))
     .filter((e: MotorsportEvent) => e.id);
   return splitMotorsportEvents(events);
@@ -783,6 +807,11 @@ function sessionResults(comp: any): MotorsportResult[] {
       // Golf competitors don't carry a `winner` flag the way motorsport ones
       // do — leaderboard position 1 stands in for it.
       winner: c.winner ?? c.order === 1,
+      // Golf competitors carry a top-level score-to-par (e.g. "-16") —
+      // motorsport ones (F1/IndyCar/NASCAR) have no equivalent, live-checked
+      // (no score field, `statistics` always an empty array), so this is
+      // null there rather than a guess.
+      score: c.score ?? null,
     }));
 }
 
@@ -812,7 +841,7 @@ function simplifyMotorsportDetail(payload: any, sport: string): MotorsportEventD
 export async function getMotorsportSchedule(leagueId: string): Promise<MotorsportSchedule> {
   const { sport, league } = leaguePath(leagueId);
   const payload = await fetchEspn<any>(`https://site.api.espn.com/apis/site/v2/sports/${sport}/${league}/scoreboard`);
-  return simplifyMotorsportSchedule(payload);
+  return simplifyMotorsportSchedule(payload, leagueId);
 }
 
 export async function getMotorsportEventDetail(

@@ -34,6 +34,12 @@ function ResultRow({ result }: { result: MotorsportSession['results'][number] })
       <Text style={[styles.resultName, result.winner && styles.resultWinnerText]} numberOfLines={1}>
         {result.driverName}
       </Text>
+      {/* Only golf carries a score (score-to-par, e.g. "-16") — motorsport
+          sessions have no equivalent time/gap data from ESPN, so this stays
+          hidden there rather than showing a fabricated or blank column. */}
+      {result.score ? (
+        <Text style={[styles.resultScore, result.winner && styles.resultWinnerText]}>{result.score}</Text>
+      ) : null}
     </View>
   );
 }
@@ -63,6 +69,10 @@ export function MotorsportDetailModal({
   leagueLabel: string;
   onClose: () => void;
 }) {
+  // PGA is currently the only golf entry sharing this shared motorsport
+  // architecture (same calendar/leaderboard data shape) — a plain id check
+  // rather than a shared lookup, matching the same check in LocalAIContext.
+  const isGolf = leagueId === 'pga';
   const [detail, setDetail] = useState<MotorsportEventDetail | null>(null);
   const [error, setError] = useState<string | null>(null);
   const [activeSessionId, setActiveSessionId] = useState<string | null>(null);
@@ -90,7 +100,7 @@ export function MotorsportDetailModal({
         setActiveSessionId(defaultSessionId(result.sessions));
       })
       .catch((err) => {
-        if (!cancelled) setError(err instanceof Error ? err.message : 'Could not load race detail');
+        if (!cancelled) setError(err instanceof Error ? err.message : `Could not load ${isGolf ? 'tournament' : 'race'} detail`);
       });
     return () => {
       cancelled = true;
@@ -136,7 +146,7 @@ export function MotorsportDetailModal({
     }
     Alert.alert(
       'Download on-device AI model?',
-      'Analyzing a race weekend runs a language model on your device instead of a server. It needs a one-time download of about 2.5GB, cached afterward so this only happens once. The race data and the analysis itself stay on your device and are never sent anywhere. Continue?',
+      `Analyzing a ${isGolf ? 'tournament' : 'race weekend'} runs a language model on your device instead of a server. It needs a one-time download of about 2.5GB, cached afterward so this only happens once. The ${isGolf ? 'tournament' : 'race'} data and the analysis itself stay on your device and are never sent anywhere. Continue?`,
       [
         { text: 'Cancel', style: 'cancel' },
         { text: 'Download', onPress: () => ai.requestModelDownload() },
@@ -164,12 +174,12 @@ export function MotorsportDetailModal({
           </View>
           <ScrollView contentContainerStyle={styles.scrollContent} showsVerticalScrollIndicator={false}>
             {error ? (
-              <Text style={styles.error}>Could not load this race ({error}).</Text>
+              <Text style={styles.error}>Could not load this {isGolf ? 'tournament' : 'race'} ({error}).</Text>
             ) : !detail ? (
               <ActivityIndicator
                 color={Colors.accent}
                 style={{ marginVertical: Spacing.s4 }}
-                accessibilityLabel="Loading race detail"
+                accessibilityLabel={`Loading ${isGolf ? 'tournament' : 'race'} detail`}
               />
             ) : (
               <>
@@ -197,15 +207,17 @@ export function MotorsportDetailModal({
                       <Pressable
                         onPress={handleAnalyzePress}
                         accessibilityRole="button"
-                        accessibilityLabel="Analyze this race"
+                        accessibilityLabel={`Analyze this ${isGolf ? 'tournament' : 'race'}`}
                         style={({ pressed }) => [styles.analyzeBtn, pressed && styles.analyzeBtnPressed]}
                       >
-                        <Text style={styles.analyzeBtnText}>Analyze this race</Text>
+                        <Text style={styles.analyzeBtnText}>Analyze this {isGolf ? 'tournament' : 'race'}</Text>
                       </Pressable>
                     ) : aiStatus === 'loading' ? (
                       <View style={styles.loadingRow}>
-                        <ActivityIndicator color={Colors.accent} accessibilityLabel="Analyzing race" />
-                        <Text style={styles.loadingText}>Analyzing race weekend on-device…</Text>
+                        <ActivityIndicator color={Colors.accent} accessibilityLabel={`Analyzing ${isGolf ? 'tournament' : 'race'}`} />
+                        <Text style={styles.loadingText}>
+                          Analyzing {isGolf ? 'tournament' : 'race weekend'} on-device…
+                        </Text>
                       </View>
                     ) : (
                       <>
@@ -229,20 +241,33 @@ export function MotorsportDetailModal({
                   </>
                 ) : null}
 
-                <Text style={[styles.sectionHeading, styles.sectionHeadingSpaced]} accessibilityRole="header">
-                  Sessions
-                </Text>
-                <View style={styles.sessionCard}>
-                  {detail.sessions.map((s) => (
-                    <SessionRow key={s.id} session={s} />
-                  ))}
-                </View>
+                {/* Golf has exactly one competition per tournament (live-
+                    checked — no separate FP1/FP2/Qual/Race split the way
+                    motorsport has), so a "Sessions" list showing that one
+                    row is pure noise; the leaderboard below is the only
+                    thing there is to show. */}
+                {!isGolf ? (
+                  <>
+                    <Text style={[styles.sectionHeading, styles.sectionHeadingSpaced]} accessibilityRole="header">
+                      Sessions
+                    </Text>
+                    <View style={styles.sessionCard}>
+                      {detail.sessions.map((s) => (
+                        <SessionRow key={s.id} session={s} />
+                      ))}
+                    </View>
+                  </>
+                ) : null}
 
-                <Text style={styles.sectionHeading} accessibilityRole="header">
-                  Results
+                <Text style={[styles.sectionHeading, isGolf && styles.sectionHeadingSpaced]} accessibilityRole="header">
+                  {isGolf ? 'Leaderboard' : 'Results'}
                 </Text>
                 {sessionsWithResults.length === 0 ? (
-                  <Text style={styles.empty}>Results will appear here once a session is run.</Text>
+                  <Text style={styles.empty}>
+                    {isGolf
+                      ? 'The leaderboard will appear once the tournament begins.'
+                      : 'Results will appear here once a session is run.'}
+                  </Text>
                 ) : (
                   <>
                     {sessionsWithResults.length > 1 ? (
@@ -354,5 +379,6 @@ const styles = StyleSheet.create({
   resultPosition: { width: 24, color: Colors.textMuted, fontSize: 14, fontFamily: Fonts.bold, fontWeight: '700', textAlign: 'center' },
   resultFlag: { width: 18, height: 18 },
   resultName: { flex: 1, color: Colors.text, fontSize: 14, fontFamily: Fonts.semibold, fontWeight: '600' },
+  resultScore: { color: Colors.textMuted, fontSize: 14, fontFamily: Fonts.bold, fontWeight: '700', fontVariant: ['tabular-nums'] },
   resultWinnerText: { color: Colors.accent },
 });

@@ -50,6 +50,20 @@ const MOTORSPORT_SYSTEM_PROMPT =
   'driving the pick grounded in the provided data, and note one thing that could flip it. No headers, no bullet ' +
   'points, plain prose.';
 
+// Golf (PGA) shares the same calendar/leaderboard data shape as motorsport
+// (see api.ts's simplifyMotorsportSchedule) so it reuses that fetch/parse
+// path, but its own vocabulary is different enough that the racing prompt
+// above would actively mislead a model here — there's no grid, no
+// qualifying session, and no "podium" in the same sense.
+const GOLF_SYSTEM_PROMPT =
+  'You are a concise, sharp golf analyst. Your training data has a cutoff date, so any specific facts you recall ' +
+  "about current players or season standings may be stale — do not state them from memory. Base your pick " +
+  "strictly on the season standings and event details given to you in this message; if you don't have enough " +
+  'given data to justify a specific factor, speak generally about season form instead of citing facts not ' +
+  'provided. Respond in 3-5 sentences: pick a likely tournament winner (or top finisher), give one key factor ' +
+  'driving the pick grounded in the provided data, and note one thing that could flip it. No headers, no bullet ' +
+  'points, plain prose.';
+
 interface AnalyzeMotorsportArgs {
   leagueId: string;
   leagueLabel: string;
@@ -152,21 +166,31 @@ function standingsLine(entries: MotorsportStandingEntry[], limit: number): strin
     .join(', ');
 }
 
-function buildMotorsportUserMessage(args: AnalyzeMotorsportArgs, standings: MotorsportStandings): string {
+function buildMotorsportUserMessage(args: AnalyzeMotorsportArgs, standings: MotorsportStandings, isGolf: boolean): string {
   const { leagueLabel, eventName, circuit, qualifyingResults } = args;
-  const circuitLine = circuit ? `Circuit: ${circuit.name}${circuit.location ? ` (${circuit.location})` : ''}.` : null;
+  const circuitLine = circuit
+    ? `${isGolf ? 'Course' : 'Circuit'}: ${circuit.name}${circuit.location ? ` (${circuit.location})` : ''}.`
+    : null;
   const driversLine = standingsLine(standings.drivers, 5);
   const constructorsLine = standingsLine(standings.constructors, 5);
-  const qualiLine = qualifyingResults.length
-    ? `Qualifying result (grid order): ${qualifyingResults
-        .slice(0, 5)
-        .map((r) => `${r.position}. ${r.driverName}`)
-        .join(', ')}.`
-    : 'Qualifying has not been run yet for this weekend.';
+  // Golf has no qualifying session and no per-league standings data from
+  // ESPN (live-checked: golf/pga's standings endpoint returns no children
+  // at all), so driversLine/constructorsLine are already naturally empty
+  // for it — this just also drops the racing-only qualifying line, which
+  // would otherwise always claim "qualifying hasn't run yet" for a sport
+  // that doesn't have qualifying in the first place.
+  const qualiLine = isGolf
+    ? null
+    : qualifyingResults.length
+      ? `Qualifying result (grid order): ${qualifyingResults
+          .slice(0, 5)
+          .map((r) => `${r.position}. ${r.driverName}`)
+          .join(', ')}.`
+      : 'Qualifying has not been run yet for this weekend.';
   return [
-    `${leagueLabel} race weekend — ${eventName}.`,
+    `${leagueLabel} ${isGolf ? 'tournament' : 'race weekend'} — ${eventName}.`,
     circuitLine,
-    driversLine && `Driver championship standings so far: ${driversLine}.`,
+    driversLine && `${isGolf ? 'Season' : 'Driver championship'} standings so far: ${driversLine}.`,
     constructorsLine && `Constructor championship standings so far: ${constructorsLine}.`,
     qualiLine,
   ]
@@ -277,10 +301,15 @@ export function LocalAIProvider({ children }: { children: ReactNode }) {
         return llm.generate(chat);
       },
       analyzeMotorsportEvent: async (args) => {
+        // PGA is currently the only golf entry in this app's league list —
+        // a plain id check rather than a shared lookup, matching how other
+        // single-league special cases (LEAGUE_PATHS, REGULAR_SEASON_TYPE in
+        // api.ts) are already handled here.
+        const isGolf = args.leagueId === 'pga';
         const standings = await safeMotorsportStandings(args.leagueId);
         const chat: Message[] = [
-          { role: 'system', content: MOTORSPORT_SYSTEM_PROMPT },
-          { role: 'user', content: buildMotorsportUserMessage(args, standings) },
+          { role: 'system', content: isGolf ? GOLF_SYSTEM_PROMPT : MOTORSPORT_SYSTEM_PROMPT },
+          { role: 'user', content: buildMotorsportUserMessage(args, standings, isGolf) },
         ];
         return llm.generate(chat);
       },

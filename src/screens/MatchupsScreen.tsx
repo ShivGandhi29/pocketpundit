@@ -122,13 +122,18 @@ export function MatchupsScreen({
   // Motorsport gets its own driver/constructor standings modal (different
   // shape entirely — no team-vs-team table), not the team-sport one.
   const canShowStandings = activeTab !== "all" && activeLeague?.kind === "team";
-  const canShowMotorsportStandings = activeTab !== "all" && isMotorsportTab;
+  // Golf shares the same "motorsport" kind as F1/IndyCar/NASCAR (same
+  // calendar/leaderboard shape) but ESPN's standings endpoint returns no
+  // data for it at all (live-checked: `children: []` for golf/pga) — driver/
+  // constructor standings only exist for genuine racing series.
+  const isGolfTab = activeLeague?.sport === "golf";
+  const canShowMotorsportStandings = activeTab !== "all" && isMotorsportTab && !isGolfTab;
 
-  // The very next race gets its own "Next Race" section (rendered as one
-  // oversized featured card — see MotorsportEventCard's `featured` prop),
-  // the rest of the season's remaining rounds sit under "Upcoming", and
-  // anything already run groups under "Completed" rather than being left
-  // under no heading at all.
+  // The very next race/tournament gets its own featured section (rendered as
+  // one oversized card — see MotorsportEventCard's `featured` prop), the
+  // rest of the season's remaining events sit under "Upcoming", and anything
+  // already run groups under "Completed" rather than being left under no
+  // heading at all.
   const motorsportSections = useMemo(() => {
     if (!motorsportEvents) return [];
     const sections: {
@@ -138,7 +143,7 @@ export function MatchupsScreen({
     }[] = [];
     if (motorsportEvents.upcoming.length > 0) {
       sections.push({
-        title: "Next Race",
+        title: isGolfTab ? "Next Tournament" : "Next Race",
         featured: true,
         data: [motorsportEvents.upcoming[0]],
       });

@@ -6,6 +6,7 @@ import { Text } from '@/components/AppText';
 
 import { Colors, Radius, Spacing } from '@/constants/theme';
 import { Fonts } from '@/constants/fonts';
+import { FLAG_COLORS, US_STATE_FLAG_COLORS } from '@/constants/flagColors';
 import { formatKickoffTime } from '@/utils/formatGameTime';
 import { teamGradientColor } from '@/utils/teamGradient';
 import type { MotorsportEvent } from '@/types/huddl';
@@ -39,19 +40,28 @@ export const MotorsportEventCard = memo(function MotorsportEventCard({
   const state = weekendState(event);
   const dateRange = `${RANGE_FORMAT.format(new Date(event.date))} – ${RANGE_FORMAT.format(new Date(event.endDate))}`;
   const label = [
-    event.countryName ? `Round ${event.round}, ${event.countryName}` : event.name,
+    event.locationName ? `Round ${event.round}, ${event.locationName}` : event.name,
     state === 'past' ? `completed, ${dateRange}` : state === 'live' ? `live now, ${dateRange}` : `${dateRange}, starts ${formatKickoffTime(event.date)}`,
   ].join(', ');
 
-  // Same idea as GameCard's two-team gradient split — a color wash fading
-  // into the card's own dark surface — but with one subject instead of two,
-  // since a race weekend doesn't have "sides." Upcoming glows accent green,
-  // live glows red (this app's live-state color everywhere else), and a
-  // completed weekend stays flat so it visually recedes behind what's next.
-  const washColor = state === 'live' ? Colors.live : state === 'pre' ? Colors.accent : null;
-  const gradientColors: [string, string] = washColor
-    ? [teamGradientColor(washColor), Colors.surface]
-    : [Colors.surface, Colors.surface];
+  // Live always glows this app's live-state red, and a completed weekend
+  // stays flat so it visually recedes behind what's next — unchanged. An
+  // upcoming race with a derived location gets a genuine two-tone gradient
+  // instead of one generic accent wash fading to gray: a real national flag
+  // for F1, or — new — a US state flag for NASCAR when the event names one
+  // ("... at Kansas"). Both run through the same contrast-safe blend
+  // GameCard's team-color split uses. A NASCAR race named after a city or
+  // track ("at Bristol") has no flag in either table, so it falls back to
+  // the plain accent wash rather than guessing a color.
+  const flagColors = event.locationName ? (FLAG_COLORS[event.locationName] ?? US_STATE_FLAG_COLORS[event.locationName]) : undefined;
+  const gradientColors: [string, string] =
+    state === 'live'
+      ? [teamGradientColor(Colors.live), Colors.surface]
+      : state === 'pre'
+        ? flagColors
+          ? [teamGradientColor(flagColors[0]), teamGradientColor(flagColors[1])]
+          : [teamGradientColor(Colors.accent), Colors.surface]
+        : [Colors.surface, Colors.surface];
 
   return (
     <Pressable
@@ -72,11 +82,13 @@ export const MotorsportEventCard = memo(function MotorsportEventCard({
           </View>
         ) : null}
 
-        {event.countryName ? (
+        {event.locationName ? (
           <View style={styles.roundRow}>
-            {event.countryFlag ? (
+            {/* Only ever a real national flag (F1) — NASCAR's US-state
+                locations get a color gradient, not a fabricated flag icon. */}
+            {event.locationFlag ? (
               <Image
-                source={{ uri: event.countryFlag }}
+                source={{ uri: event.locationFlag }}
                 style={[styles.flag, featured && styles.flagFeatured]}
                 contentFit="cover"
                 accessibilityElementsHidden
@@ -87,11 +99,19 @@ export const MotorsportEventCard = memo(function MotorsportEventCard({
           </View>
         ) : null}
 
-        {event.countryName ? (
-          <Text style={[styles.country, featured && styles.countryFeatured]} numberOfLines={1}>
-            {event.countryName}
-          </Text>
-        ) : null}
+        {/* A derived location exists for F1 ("Spanish Grand Prix" → "Spain")
+            and for NASCAR when its own event name trails off with "at
+            {place}" ("... at Kansas" → "Kansas") — see deriveLocation in
+            api.ts. Golf and events matching neither pattern ("Daytona 500")
+            have nothing to put here, so the event's own name takes the
+            heading spot instead of being stuck in a small caption below the
+            time — that name is the only identifying info those have. */}
+        <Text
+          style={[styles.location, featured && styles.locationFeatured]}
+          numberOfLines={event.locationName ? 1 : 2}
+        >
+          {event.locationName ?? event.name}
+        </Text>
 
         {state === 'pre' ? (
           <>
@@ -106,9 +126,11 @@ export const MotorsportEventCard = memo(function MotorsportEventCard({
             {state === 'live' ? `Live · ${dateRange}` : `Completed · ${dateRange}`}
           </Text>
         )}
-        <Text style={[styles.name, featured && styles.nameFeatured]} numberOfLines={2}>
-          {event.name}
-        </Text>
+        {event.locationName ? (
+          <Text style={[styles.name, featured && styles.nameFeatured]} numberOfLines={2}>
+            {event.name}
+          </Text>
+        ) : null}
       </LinearGradient>
     </Pressable>
   );
@@ -144,8 +166,8 @@ const styles = StyleSheet.create({
   flagFeatured: { width: 20, height: 14, borderRadius: 3 },
   roundLabel: { color: Colors.textMuted, fontSize: 12, fontFamily: Fonts.semibold, fontWeight: '600' },
   roundLabelFeatured: { fontSize: 14 },
-  country: { color: Colors.text, fontSize: 20, fontFamily: Fonts.extrabold, fontWeight: '800', letterSpacing: -0.3, marginBottom: Spacing.s2 },
-  countryFeatured: { fontSize: 34, marginBottom: Spacing.s3 },
+  location: { color: Colors.text, fontSize: 20, fontFamily: Fonts.extrabold, fontWeight: '800', letterSpacing: -0.3, marginBottom: Spacing.s2 },
+  locationFeatured: { fontSize: 34, marginBottom: Spacing.s3 },
   headlineTime: { color: Colors.text, fontSize: 22, fontFamily: Fonts.extrabold, fontWeight: '800', letterSpacing: -0.3 },
   headlineTimeFeatured: { fontSize: 40 },
   headlineDate: {

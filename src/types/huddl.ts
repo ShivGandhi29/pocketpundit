@@ -71,9 +71,16 @@ export interface MotorsportEvent {
   endDate: string;
   /** 1-based position in the season calendar. */
   round: number;
-  /** Host country, derived from the event name — null if it couldn't be matched. */
-  countryName: string | null;
-  countryFlag: string | null;
+  /** The headline location, derived from the event name — a country for F1
+   * ("Spanish Grand Prix" → "Spain"), a US state for NASCAR when the event
+   * names one ("... at Kansas" → "Kansas"), null if nothing could be
+   * matched. Not always literally a country, despite the flag field below
+   * only ever holding a real national flag (never fabricated for a state). */
+  locationName: string | null;
+  /** A real national flag image — only ever set when locationName is an
+   * actual country (F1). NASCAR's US-state locations have no flag here;
+   * they get a state-flag-colored gradient instead (see flagColors.ts). */
+  locationFlag: string | null;
 }
 
 export interface MotorsportSchedule {
@@ -88,6 +95,10 @@ export interface MotorsportResult {
   driverName: string;
   countryFlag: string | null;
   winner: boolean;
+  /** Golf competitors carry a score-to-par (e.g. "-16") — live-checked,
+   * motorsport competitors (F1/IndyCar/NASCAR) have no equivalent field at
+   * all (no time, no gap), so this is null for every session there. */
+  score: string | null;
 }
 
 export interface MotorsportSession {
