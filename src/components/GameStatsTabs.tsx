@@ -1,10 +1,11 @@
 import { Image } from 'expo-image';
 import { GlassView } from 'expo-glass-effect';
-import { memo, useEffect, useState } from 'react';
+import { memo, useEffect, useMemo, useState } from 'react';
 import { ActivityIndicator, Platform, Pressable, ScrollView, StyleSheet, View } from 'react-native';
 import { Text } from '@/components/AppText';
 
-import { getGameSummary } from '@/services/api';
+import { getGameSummary, getStandings } from '@/services/api';
+import { GroupTable } from '@/components/StandingsGroupTable';
 import { Colors, Radius, Spacing } from '@/constants/theme';
 import { Fonts } from '@/constants/fonts';
 import type {
@@ -13,6 +14,7 @@ import type {
   GameSummary,
   GameTeam,
   PlayerStatGroup,
+  StandingsGroup,
   TeamStat,
   TeamStatLine,
 } from '@/types/huddl';
@@ -294,12 +296,115 @@ function TeamStatsTab({ summary, game }: { summary: GameSummary; game: Game }) {
   );
 }
 
+// Leaders/box score/team stats don't exist yet for a game that hasn't
+// started — showing three tabs of "not available" messages isn't useful.
+// The league standings, by contrast, are just as relevant before kickoff as
+// after, so this replaces the whole tab area for a 'pre' game instead.
+function LeagueLeaderboard({ leagueId }: { leagueId: string }) {
+  const [groups, setGroups] = useState<StandingsGroup[] | null>(null);
+  const [error, setError] = useState<string | null>(null);
+  const [activeGroupId, setActiveGroupId] = useState<string | null>(null);
+
+  useEffect(() => {
+    let cancelled = false;
+    setGroups(null);
+    setError(null);
+    setActiveGroupId(null);
+    getStandings(leagueId)
+      .then((result) => {
+        if (!cancelled) setGroups(result);
+      })
+      .catch((err) => {
+        if (!cancelled) setError(err instanceof Error ? err.message : 'Could not load standings');
+      });
+    return () => {
+      cancelled = true;
+    };
+  }, [leagueId]);
+
+  const visibleGroups = useMemo(() => {
+    if (!groups) return [];
+    if (!activeGroupId) return groups;
+    return groups.filter((g) => g.id === activeGroupId);
+  }, [groups, activeGroupId]);
+
+  return (
+    <View>
+      <Text style={styles.leaderboardHeading} accessibilityRole="header">
+        League standings
+      </Text>
+      {groups && groups.length > 1 ? (
+        <ScrollView
+          horizontal
+          showsHorizontalScrollIndicator={false}
+          style={styles.filterRow}
+          contentContainerStyle={styles.filterRowContent}
+        >
+          <Pressable
+            onPress={() => setActiveGroupId(null)}
+            accessibilityRole="button"
+            accessibilityLabel="All Groups"
+            accessibilityState={{ selected: activeGroupId === null }}
+          >
+            <GlassView
+              glassEffectStyle="regular"
+              isInteractive
+              tintColor={activeGroupId === null ? Colors.accent : undefined}
+              style={[styles.filterPill, activeGroupId === null && Platform.OS !== 'ios' && styles.filterPillSelectedFallback]}
+            >
+              <Text style={[styles.filterPillText, activeGroupId === null && styles.filterPillTextActive]}>All Groups</Text>
+            </GlassView>
+          </Pressable>
+          {groups.map((g) => (
+            <Pressable
+              key={g.id}
+              onPress={() => setActiveGroupId(g.id)}
+              accessibilityRole="button"
+              accessibilityLabel={g.name}
+              accessibilityState={{ selected: activeGroupId === g.id }}
+            >
+              <GlassView
+                glassEffectStyle="regular"
+                isInteractive
+                tintColor={activeGroupId === g.id ? Colors.accent : undefined}
+                style={[styles.filterPill, activeGroupId === g.id && Platform.OS !== 'ios' && styles.filterPillSelectedFallback]}
+              >
+                <Text style={[styles.filterPillText, activeGroupId === g.id && styles.filterPillTextActive]} numberOfLines={1}>
+                  {g.name}
+                </Text>
+              </GlassView>
+            </Pressable>
+          ))}
+        </ScrollView>
+      ) : null}
+
+      {error ? (
+        <Text style={styles.empty}>Could not load standings ({error}).</Text>
+      ) : !groups ? (
+        <ActivityIndicator color={Colors.accent} style={{ marginVertical: Spacing.s4 }} accessibilityLabel="Loading standings" />
+      ) : groups.length === 0 ? (
+        <Text style={styles.empty}>No standings available.</Text>
+      ) : (
+        <View style={styles.leaderboardGroups}>
+          {visibleGroups.map((group) => (
+            <GroupTable key={group.id} group={group} />
+          ))}
+        </View>
+      )}
+    </View>
+  );
+}
+
 export function GameStatsTabs({ game, leagueId }: { game: Game; leagueId: string }) {
   const [activeTab, setActiveTab] = useState<Tab>('leaders');
   const [summary, setSummary] = useState<GameSummary | null>(null);
   const [error, setError] = useState<string | null>(null);
 
   useEffect(() => {
+    // An upcoming game shows the league leaderboard instead (see
+    // LeagueLeaderboard/return below) — no reason to fetch a game summary
+    // that has nothing in it yet.
+    if (game.state === 'pre') return;
     let cancelled = false;
     setSummary(null);
     setError(null);
@@ -313,7 +418,11 @@ export function GameStatsTabs({ game, leagueId }: { game: Game; leagueId: string
     return () => {
       cancelled = true;
     };
-  }, [leagueId, game.id]);
+  }, [leagueId, game.id, game.state]);
+
+  if (game.state === 'pre') {
+    return <LeagueLeaderboard leagueId={leagueId} />;
+  }
 
   return (
     <View>
@@ -381,6 +490,25 @@ const styles = StyleSheet.create({
   // the app's own near-black background.
   tabSelectedFallback: { backgroundColor: Colors.accent },
   empty: { color: Colors.textMuted, fontSize: 14, textAlign: 'center', marginVertical: Spacing.s4 },
+  leaderboardHeading: { color: Colors.accent, fontSize: 15, fontFamily: Fonts.bold, fontWeight: '700', marginBottom: Spacing.s2 },
+  leaderboardGroups: { gap: Spacing.s4 },
+  // Taller than the 44px filter pill so its Liquid Glass press-bloom isn't
+  // clipped by a row sized exactly to the pill's resting height.
+  filterRow: { flexGrow: 0, height: 48, marginBottom: Spacing.s2 },
+  filterRowContent: { gap: Spacing.s2 },
+  filterPill: {
+    height: 44,
+    paddingHorizontal: Spacing.s3,
+    borderRadius: Radius.pill,
+    alignItems: 'center',
+    justifyContent: 'center',
+  },
+  filterPillText: { color: Colors.text, fontSize: 13, fontFamily: Fonts.semibold, fontWeight: '600' },
+  filterPillTextActive: { color: Colors.onAccent },
+  // tintColor is iOS-only — without this, a selected pill on Android/web
+  // gets no background fill, leaving near-black filterPillTextActive text
+  // on the app's own near-black background.
+  filterPillSelectedFallback: { backgroundColor: Colors.accent },
   teamToggleRow: { flexDirection: 'row', gap: Spacing.s2, marginBottom: Spacing.s3 },
   teamToggleFlex: { flex: 1 },
   teamToggle: {
