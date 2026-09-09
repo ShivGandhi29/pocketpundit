@@ -51,14 +51,14 @@ function CenterBadge({ state }: { state: Game["state"] }) {
     return (
       <View style={styles.liveBadge}>
         <Ionicons name="play" size={10} color={Colors.onAccent} />
-        <Text style={styles.liveBadgeText}>LIVE</Text>
+        <Text style={styles.liveBadgeText}>Live</Text>
       </View>
     );
   }
   if (state === "post") {
-    return <Text style={styles.centerMuted}>FINAL</Text>;
+    return <Text style={styles.centerMuted}>Final</Text>;
   }
-  return <Text style={styles.centerMuted}>VS</Text>;
+  return <Text style={styles.centerMuted}>vs</Text>;
 }
 
 // Memoized, with a stable `onOpen` callback expected from the caller (see

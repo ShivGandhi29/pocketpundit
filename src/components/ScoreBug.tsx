@@ -67,7 +67,11 @@ function LinescoreTable({ game }: { game: Game }) {
 
   return (
     <View style={styles.linescore}>
-      <View style={styles.linescoreRow}>
+      {/* Each row below restates its own period labels in its accessibility
+          label, so this header row is purely a sighted-layout header —
+          hiding it from the accessibility tree avoids announcing bare
+          period numbers with no team context. */}
+      <View style={styles.linescoreRow} importantForAccessibility="no-hide-descendants">
         <Text style={[styles.linescoreCell, styles.linescoreHeadCell]} />
         {periodNumbers.map((period) => (
           <Text key={period} style={[styles.linescoreCell, styles.linescoreHeadText]}>
@@ -79,19 +83,32 @@ function LinescoreTable({ game }: { game: Game }) {
       {([
         ['away', game.away],
         ['home', game.home],
-      ] as const).map(([key, team]) => (
-        <View key={key} style={styles.linescoreRow}>
-          <Text style={[styles.linescoreCell, styles.linescoreHeadCell, styles.linescoreAbbr]}>
-            {team.abbreviation}
-          </Text>
-          {periodNumbers.map((period) => (
-            <Text key={period} style={styles.linescoreCell}>
-              {team.linescores.find((l) => l.period === period)?.displayValue ?? '-'}
+      ] as const).map(([key, team]) => {
+        // Collapsed into one composed label (e.g. "Pittsburgh: Q1 7, Q2 0,
+        // Total 13") rather than leaving each cell individually focusable —
+        // a screen reader landing on a bare "7" has no way to tell which
+        // team or period it belongs to otherwise.
+        const rowLabel = [
+          `${team.name}:`,
+          ...periodNumbers.map(
+            (period) => `${periodLabel(period, regulation)} ${team.linescores.find((l) => l.period === period)?.displayValue ?? '-'}`
+          ),
+          `Total ${team.score ?? '-'}`,
+        ].join(', ');
+        return (
+          <View key={key} style={styles.linescoreRow} accessible accessibilityLabel={rowLabel}>
+            <Text style={[styles.linescoreCell, styles.linescoreHeadCell, styles.linescoreAbbr]}>
+              {team.abbreviation}
             </Text>
-          ))}
-          <Text style={[styles.linescoreCell, styles.linescoreTotal]}>{team.score ?? '-'}</Text>
-        </View>
-      ))}
+            {periodNumbers.map((period) => (
+              <Text key={period} style={styles.linescoreCell}>
+                {team.linescores.find((l) => l.period === period)?.displayValue ?? '-'}
+              </Text>
+            ))}
+            <Text style={[styles.linescoreCell, styles.linescoreTotal]}>{team.score ?? '-'}</Text>
+          </View>
+        );
+      })}
     </View>
   );
 }

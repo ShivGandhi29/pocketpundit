@@ -1,6 +1,6 @@
 import { Ionicons } from '@expo/vector-icons';
 import { useMemo, useState } from 'react';
-import { Image, Pressable, ScrollView, StyleSheet, TextInput, View, useWindowDimensions } from 'react-native';
+import { Image, Platform, Pressable, ScrollView, StyleSheet, TextInput, View, useWindowDimensions } from 'react-native';
 import { Text } from '@/components/AppText';
 import { GlassView } from 'expo-glass-effect';
 import { SafeAreaView } from 'react-native-safe-area-context';
@@ -150,7 +150,12 @@ export function LeaguePicker({
                           glassEffectStyle="regular"
                           isInteractive
                           tintColor={checked ? Colors.accent : undefined}
-                          style={[styles.tile, { width: tileWidth }, pressed && styles.pressed]}
+                          style={[
+                            styles.tile,
+                            { width: tileWidth },
+                            checked && Platform.OS !== 'ios' && styles.tileSelectedFallback,
+                            pressed && styles.pressed,
+                          ]}
                         >
                           <View style={styles.tileLogoWrap}>
                             <View style={styles.tileLogoBackdrop}>
@@ -254,6 +259,9 @@ const styles = StyleSheet.create({
     paddingHorizontal: Spacing.s1,
     borderRadius: Radius.md,
   },
+  // tintColor is iOS-only — without this, a checked league tile on
+  // Android/web shows no selected-state fill at all.
+  tileSelectedFallback: { backgroundColor: Colors.accent },
   tileLogoWrap: { width: 44, height: 44 },
   tileLogoBackdrop: {
     width: 44,

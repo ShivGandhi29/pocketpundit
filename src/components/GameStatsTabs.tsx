@@ -1,7 +1,7 @@
 import { Image } from 'expo-image';
 import { GlassView } from 'expo-glass-effect';
 import { memo, useEffect, useState } from 'react';
-import { ActivityIndicator, Pressable, ScrollView, StyleSheet, View } from 'react-native';
+import { ActivityIndicator, Platform, Pressable, ScrollView, StyleSheet, View } from 'react-native';
 import { Text } from '@/components/AppText';
 
 import { getGameSummary } from '@/services/api';
@@ -126,7 +126,10 @@ function StatGroupTable({ group }: { group: PlayerStatGroup }) {
       </Text>
       <ScrollView horizontal showsHorizontalScrollIndicator={false}>
         <View>
-          <View style={styles.boxRow}>
+          {/* Each row below restates its own column labels in its
+              accessibility label, so this header row is a sighted-layout
+              header only. */}
+          <View style={styles.boxRow} importantForAccessibility="no-hide-descendants">
             <Text style={[styles.boxCell, styles.boxNameCell, styles.boxHeadText]}>Player</Text>
             {group.labels.map((label) => (
               <Text key={label} style={[styles.boxCell, styles.boxHeadText]}>
@@ -134,18 +137,25 @@ function StatGroupTable({ group }: { group: PlayerStatGroup }) {
               </Text>
             ))}
           </View>
-          {group.athletes.map((a, i) => (
-            <View key={i} style={styles.boxRow}>
-              <Text style={[styles.boxCell, styles.boxNameCell]} numberOfLines={1}>
-                {a.athleteName}
-              </Text>
-              {a.stats.map((s, j) => (
-                <Text key={j} style={styles.boxCell}>
-                  {s}
+          {group.athletes.map((a, i) => {
+            // Collapsed into one composed label (e.g. "J. Allen: YDS 320,
+            // TD 3") rather than leaving each stat individually focusable —
+            // a bare "320" cell has no way to say which player or stat
+            // column it belongs to otherwise.
+            const rowLabel = `${a.athleteName}: ${a.stats.map((s, j) => `${group.labels[j] ?? ''} ${s}`).join(', ')}`;
+            return (
+              <View key={i} style={styles.boxRow} accessible accessibilityLabel={rowLabel}>
+                <Text style={[styles.boxCell, styles.boxNameCell]} numberOfLines={1}>
+                  {a.athleteName}
                 </Text>
-              ))}
-            </View>
-          ))}
+                {a.stats.map((s, j) => (
+                  <Text key={j} style={styles.boxCell}>
+                    {s}
+                  </Text>
+                ))}
+              </View>
+            );
+          })}
         </View>
       </ScrollView>
     </View>
@@ -181,7 +191,7 @@ function BoxScoreTab({ summary, game }: { summary: GameSummary; game: Game }) {
                   glassEffectStyle="regular"
                   isInteractive
                   tintColor={selected ? Colors.accent : undefined}
-                  style={[styles.teamToggle, pressed && styles.pressed]}
+                  style={[styles.teamToggle, selected && Platform.OS !== 'ios' && styles.teamToggleSelectedFallback, pressed && styles.pressed]}
                 >
                   {t.logo ? <Image source={{ uri: t.logo }} style={styles.teamToggleLogo} contentFit="contain" /> : null}
                   <Text style={[styles.teamToggleText, selected && styles.teamToggleTextSelected]}>
@@ -238,7 +248,9 @@ function TeamStatsTab({ summary, game }: { summary: GameSummary; game: Game }) {
   }
   return (
     <View>
-      <View style={styles.teamStatsHeaderRow}>
+      {/* Each row below restates both team names in its accessibility
+          label, so this header is a sighted-layout header only. */}
+      <View style={styles.teamStatsHeaderRow} importantForAccessibility="no-hide-descendants">
         <View style={styles.teamStatsHeaderSide}>
           {game.away.logo ? <Image source={{ uri: game.away.logo }} style={styles.teamStatsHeaderLogo} contentFit="contain" /> : null}
           <Text style={styles.teamStatsHeaderTeam} numberOfLines={1}>
@@ -259,8 +271,12 @@ function TeamStatsTab({ summary, game }: { summary: GameSummary; game: Game }) {
         // INTs made) so a name lookup can silently pair the wrong two values.
         // Both teams' arrays share the same schema and order, so index is safe.
         const awayStat = away.stats[i];
+        // Composed so a screen reader hears which team each number belongs
+        // to (e.g. "Passing Yards: New England 320, Buffalo 280") instead
+        // of three disconnected values in a row.
+        const rowLabel = `${homeStat.label}: ${game.away.name} ${awayStat?.displayValue ?? '-'}, ${game.home.name} ${homeStat.displayValue}`;
         return (
-          <View key={i} style={styles.teamStatsRow}>
+          <View key={i} style={styles.teamStatsRow} accessible accessibilityLabel={rowLabel}>
             <View style={styles.teamStatsValuesRow}>
               <Text style={styles.teamStatsValue}>{awayStat?.displayValue ?? '-'}</Text>
               <Text style={styles.teamStatsLabel} numberOfLines={1}>
@@ -317,7 +333,7 @@ export function GameStatsTabs({ game, leagueId }: { game: Game; leagueId: string
                   glassEffectStyle="regular"
                   isInteractive
                   tintColor={selected ? Colors.accent : undefined}
-                  style={[styles.tab, pressed && styles.pressed]}
+                  style={[styles.tab, selected && Platform.OS !== 'ios' && styles.tabSelectedFallback, pressed && styles.pressed]}
                 >
                   <Text style={[styles.tabText, selected && styles.tabTextSelected]}>{tab.label}</Text>
                 </GlassView>
@@ -360,6 +376,10 @@ const styles = StyleSheet.create({
   },
   tabText: { color: Colors.text, fontSize: 13, fontFamily: Fonts.semibold, fontWeight: '600' },
   tabTextSelected: { color: Colors.onAccent },
+  // tintColor is iOS-only — without this, a selected tab on Android/web gets
+  // no background fill at all, leaving near-black tabTextSelected text on
+  // the app's own near-black background.
+  tabSelectedFallback: { backgroundColor: Colors.accent },
   empty: { color: Colors.textMuted, fontSize: 14, textAlign: 'center', marginVertical: Spacing.s4 },
   teamToggleRow: { flexDirection: 'row', gap: Spacing.s2, marginBottom: Spacing.s3 },
   teamToggleFlex: { flex: 1 },
@@ -374,6 +394,7 @@ const styles = StyleSheet.create({
   teamToggleLogo: { width: 20, height: 20 },
   teamToggleText: { color: Colors.textMuted, fontSize: 14, fontFamily: Fonts.bold, fontWeight: '700' },
   teamToggleTextSelected: { color: Colors.text },
+  teamToggleSelectedFallback: { backgroundColor: Colors.accent },
   teamHeaderRow: { flexDirection: 'row', alignItems: 'center', gap: Spacing.s2, marginBottom: Spacing.s2 },
   teamHeaderLogo: { width: 22, height: 22 },
   teamHeaderText: { color: Colors.text, fontSize: 15, fontFamily: Fonts.bold, fontWeight: '700' },

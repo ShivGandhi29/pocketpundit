@@ -1,7 +1,8 @@
+import { Ionicons } from '@expo/vector-icons';
 import { GlassView } from 'expo-glass-effect';
 import { Image } from 'expo-image';
 import { useEffect, useMemo, useRef, useState } from 'react';
-import { ActivityIndicator, Modal, Platform, Pressable, ScrollView, StyleSheet, View } from 'react-native';
+import { ActivityIndicator, Alert, Modal, Platform, Pressable, ScrollView, StyleSheet, View } from 'react-native';
 import { Text } from '@/components/AppText';
 import { SafeAreaProvider, SafeAreaView } from 'react-native-safe-area-context';
 
@@ -125,6 +126,24 @@ export function MotorsportDetailModal({
       });
   }
 
+  // The model download is ~2.5GB and, once granted, happens only once per
+  // device (cached afterward) — but that first time deserves an explicit
+  // heads-up rather than silently eating someone's data/storage.
+  function handleAnalyzePress() {
+    if (ai.modelDownloadConsented) {
+      runAnalysis();
+      return;
+    }
+    Alert.alert(
+      'Download on-device AI model?',
+      'Analyzing a race weekend runs a language model on your device instead of a server. It needs a one-time download of about 2.5GB, cached afterward so this only happens once. The race data and the analysis itself stay on your device and are never sent anywhere. Continue?',
+      [
+        { text: 'Cancel', style: 'cancel' },
+        { text: 'Download', onPress: () => ai.requestModelDownload() },
+      ]
+    );
+  }
+
   return (
     <Modal visible={!!event} animationType="slide" presentationStyle="pageSheet" onRequestClose={onClose}>
       <SafeAreaProvider>
@@ -159,12 +178,13 @@ export function MotorsportDetailModal({
                     there's nothing left to forecast. */}
                 {detail.state !== 'post' ? (
                   <>
-                    <Text style={styles.analysisHeading} accessibilityRole="header">
-                      ✦ On-device AI analysis
-                    </Text>
+                    <View style={styles.analysisHeadingRow} accessible accessibilityRole="header">
+                      <Ionicons name="sparkles" size={14} color={Colors.accent} />
+                      <Text style={styles.analysisHeading}>On-device AI analysis</Text>
+                    </View>
                     {ai.error ? (
                       <Text style={styles.analysisError}>Local AI unavailable: {ai.error}</Text>
-                    ) : !ai.isReady ? (
+                    ) : ai.modelDownloadConsented && !ai.isReady ? (
                       <View style={styles.loadingRow}>
                         <ActivityIndicator color={Colors.accent} accessibilityLabel="Preparing on-device model" />
                         <Text style={styles.loadingText}>
@@ -175,7 +195,7 @@ export function MotorsportDetailModal({
                       </View>
                     ) : aiStatus === 'idle' ? (
                       <Pressable
-                        onPress={runAnalysis}
+                        onPress={handleAnalyzePress}
                         accessibilityRole="button"
                         accessibilityLabel="Analyze this race"
                         style={({ pressed }) => [styles.analyzeBtn, pressed && styles.analyzeBtnPressed]}
@@ -284,7 +304,8 @@ const styles = StyleSheet.create({
   empty: { color: Colors.textMuted, fontSize: 14 },
   sectionHeading: { color: Colors.accent, fontSize: 15, fontFamily: Fonts.bold, fontWeight: '700', marginBottom: Spacing.s2 },
   sectionHeadingSpaced: { marginTop: Spacing.s5, paddingTop: Spacing.s4 },
-  analysisHeading: { color: Colors.accent, fontSize: 15, fontFamily: Fonts.bold, fontWeight: '700', marginBottom: Spacing.s2 },
+  analysisHeadingRow: { flexDirection: 'row', alignItems: 'center', gap: 6, marginBottom: Spacing.s2 },
+  analysisHeading: { color: Colors.accent, fontSize: 15, fontFamily: Fonts.bold, fontWeight: '700' },
   loadingRow: { flexDirection: 'row', alignItems: 'center', gap: Spacing.s2, minHeight: 60 },
   loadingText: { color: Colors.textMuted, fontSize: 15 },
   analysisBody: { color: Colors.text, fontSize: 15, lineHeight: 22 },

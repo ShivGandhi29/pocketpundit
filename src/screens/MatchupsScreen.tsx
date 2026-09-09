@@ -6,6 +6,7 @@ import { useCallback, useEffect, useMemo, useState } from "react";
 import {
   FlatList,
   Image,
+  Platform,
   Pressable,
   RefreshControl,
   SectionList,
@@ -512,7 +513,7 @@ export function MatchupsScreen({
                   glassEffectStyle="regular"
                   isInteractive
                   tintColor={selected ? Colors.accent : undefined}
-                  style={styles.tab}
+                  style={[styles.tab, selected && Platform.OS !== 'ios' && styles.tabSelectedFallback]}
                 >
                   {item.logo ? (
                     // White backdrop so dark/transparent logo art (several
@@ -844,6 +845,10 @@ const styles = StyleSheet.create({
     fontWeight: "600",
   },
   tabTextSelected: { color: Colors.onAccent },
+  // tintColor is iOS-only — without this, the selected league tab on
+  // Android/web gets no background fill, leaving near-black
+  // tabTextSelected text on the app's own near-black background.
+  tabSelectedFallback: { backgroundColor: Colors.accent },
   list: { padding: Spacing.s4, paddingTop: 0, gap: Spacing.s3 },
   emptyState: {
     alignItems: "center",

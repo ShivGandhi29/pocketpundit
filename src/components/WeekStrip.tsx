@@ -62,7 +62,10 @@ const styles = StyleSheet.create({
     alignItems: 'center',
     justifyContent: 'center',
     borderRadius: Radius.lg,
-    backgroundColor: Colors.surface,
+    // surfaceRaised, not surface — with no border to define the pill's edge
+    // anymore, surface's luminance was too close to the page background to
+    // read as a distinct pill (most visible on Android/lower-gamma displays).
+    backgroundColor: Colors.surfaceRaised,
     gap: 2,
   },
   pillSelected: { backgroundColor: Colors.accent },

@@ -1,4 +1,5 @@
-import { createContext, useContext, useMemo, type ReactNode } from 'react';
+import AsyncStorage from '@react-native-async-storage/async-storage';
+import { createContext, useCallback, useContext, useEffect, useMemo, useState, type ReactNode } from 'react';
 import { LLAMA3_2_3B_SPINQUANT, useLLM, type Message } from 'react-native-executorch';
 
 import { getGamePredictor, getMotorsportStandings, getTeamInjuries, getTeamNews, getTeamStanding } from '@/services/api';
@@ -62,11 +63,23 @@ interface LocalAIContextValue {
   isReady: boolean;
   downloadProgress: number;
   error: string | null;
+  /** Whether the person has ever agreed to the ~2.5GB model download —
+   * persisted so it's only asked once per device, not once per session. */
+  modelDownloadConsented: boolean;
+  /** Grants consent and (via the preventLoad toggle below) actually starts
+   * the download. Callers show their own confirmation UI first — this
+   * itself doesn't ask, it just acts on a decision already made. */
+  requestModelDownload: () => void;
   analyzeMatchup: (args: AnalyzeArgs) => Promise<string>;
   analyzeMotorsportEvent: (args: AnalyzeMotorsportArgs) => Promise<string>;
 }
 
 const LocalAIContext = createContext<LocalAIContextValue | null>(null);
+
+// Persisted separately from the app's main AppState blob (src/storage/state.ts)
+// since this is purely about the AI feature's one-time download consent, not
+// a user preference like leagues/teams.
+const MODEL_CONSENT_KEY = 'huddl.ai-model-consent.v1';
 
 function teamContextLine(team: GameTeam, standing: TeamStanding | null, injuries: TeamInjury[], news: string[]): string {
   const splits = [team.homeRecord && `home ${team.homeRecord}`, team.roadRecord && `road ${team.roadRecord}`]
@@ -208,13 +221,35 @@ async function safePredictor(leagueId: string, gameId: string): Promise<GamePred
 }
 
 export function LocalAIProvider({ children }: { children: ReactNode }) {
-  const llm = useLLM({ model: LLAMA3_2_3B_SPINQUANT });
+  // null while the persisted consent flag is still being read — treated the
+  // same as "not consented" below so the ~2.5GB download can't start before
+  // that read resolves.
+  const [consented, setConsented] = useState<boolean | null>(null);
+
+  useEffect(() => {
+    AsyncStorage.getItem(MODEL_CONSENT_KEY).then((raw) => setConsented(raw === 'true'));
+  }, []);
+
+  const requestModelDownload = useCallback(() => {
+    setConsented(true);
+    AsyncStorage.setItem(MODEL_CONSENT_KEY, 'true').catch(() => {
+      // Non-fatal — worst case this asks again next launch, which is safe.
+    });
+  }, []);
+
+  // preventLoad keeps the model entirely untouched (no download, no disk
+  // read) until the person has explicitly agreed to the download size —
+  // this app used to start pulling ~2.5GB the instant it launched, before
+  // anyone had asked to use the AI feature at all.
+  const llm = useLLM({ model: LLAMA3_2_3B_SPINQUANT, preventLoad: !consented });
 
   const value = useMemo<LocalAIContextValue>(
     () => ({
       isReady: llm.isReady,
       downloadProgress: llm.downloadProgress,
       error: llm.error?.message ?? null,
+      modelDownloadConsented: !!consented,
+      requestModelDownload,
       analyzeMatchup: async (args) => {
         const { gameId, leagueId, home, away } = args;
         const [homeStanding, awayStanding, homeInjuries, awayInjuries, homeNews, awayNews, predictor] = await Promise.all([
@@ -250,7 +285,7 @@ export function LocalAIProvider({ children }: { children: ReactNode }) {
         return llm.generate(chat);
       },
     }),
-    [llm.isReady, llm.downloadProgress, llm.error, llm.generate]
+    [llm.isReady, llm.downloadProgress, llm.error, llm.generate, consented, requestModelDownload]
   );
 
   return <LocalAIContext.Provider value={value}>{children}</LocalAIContext.Provider>;

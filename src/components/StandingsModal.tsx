@@ -2,7 +2,7 @@ import { Ionicons } from '@expo/vector-icons';
 import { Image } from 'expo-image';
 import { GlassView } from 'expo-glass-effect';
 import { memo, useEffect, useMemo, useState } from 'react';
-import { ActivityIndicator, Modal, Pressable, ScrollView, StyleSheet, View } from 'react-native';
+import { ActivityIndicator, Modal, Platform, Pressable, ScrollView, StyleSheet, View } from 'react-native';
 import { Text } from '@/components/AppText';
 import { SafeAreaView } from 'react-native-safe-area-context';
 
@@ -22,7 +22,9 @@ const GroupTable = memo(function GroupTable({ group }: { group: StandingsGroup }
         <Text style={styles.groupMeta}>{group.rows.length} teams</Text>
       </View>
 
-      <View style={styles.tableHeadRow}>
+      {/* Each row below restates its own column labels in its accessibility
+          label, so this header row is a sighted-layout header only. */}
+      <View style={styles.tableHeadRow} importantForAccessibility="no-hide-descendants">
         <Text style={[styles.cell, styles.teamCell, styles.headText]}>Team</Text>
         {group.columnLabels.map((label) => (
           <Text key={label} style={[styles.cell, styles.headText]}>
@@ -31,26 +33,36 @@ const GroupTable = memo(function GroupTable({ group }: { group: StandingsGroup }
         ))}
       </View>
 
-      {group.rows.map((row) => (
-        <View key={row.teamId || row.teamName} style={styles.tableRow}>
-          <View style={[styles.cell, styles.teamCell]}>
-            {row.logo ? (
-              <Image source={{ uri: row.logo }} style={styles.teamLogo} contentFit="contain" />
-            ) : (
-              <View style={styles.teamLogo} />
-            )}
-            <Text style={styles.teamName} numberOfLines={1}>
-              {row.teamName}
-            </Text>
-            {row.rank === 1 ? <Ionicons name="trophy" size={13} color={Colors.accent} /> : null}
+      {group.rows.map((row) => {
+        // Collapsed into one composed label (e.g. "Buffalo Bills, rank 1: W
+        // 12, L 5, PCT .706") rather than leaving each stat individually
+        // focusable — a bare ".706" cell has no way to say which team or
+        // column it belongs to otherwise.
+        const rowLabel = [
+          `${row.teamName}${row.rank != null ? `, rank ${row.rank}` : ''}:`,
+          row.columns.map((col) => `${col.label} ${col.value}`).join(', '),
+        ].join(' ');
+        return (
+          <View key={row.teamId || row.teamName} style={styles.tableRow} accessible accessibilityLabel={rowLabel}>
+            <View style={[styles.cell, styles.teamCell]}>
+              {row.logo ? (
+                <Image source={{ uri: row.logo }} style={styles.teamLogo} contentFit="contain" />
+              ) : (
+                <View style={styles.teamLogo} />
+              )}
+              <Text style={styles.teamName} numberOfLines={1}>
+                {row.teamName}
+              </Text>
+              {row.rank === 1 ? <Ionicons name="trophy" size={13} color={Colors.accent} /> : null}
+            </View>
+            {row.columns.map((col) => (
+              <Text key={col.label} style={styles.cell}>
+                {col.value}
+              </Text>
+            ))}
           </View>
-          {row.columns.map((col) => (
-            <Text key={col.label} style={styles.cell}>
-              {col.value}
-            </Text>
-          ))}
-        </View>
-      ))}
+        );
+      })}
     </View>
   );
 });
@@ -122,7 +134,7 @@ export function StandingsModal({
                 glassEffectStyle="regular"
                 isInteractive
                 tintColor={activeGroupId === null ? Colors.accent : undefined}
-                style={styles.filterPill}
+                style={[styles.filterPill, activeGroupId === null && Platform.OS !== 'ios' && styles.filterPillSelectedFallback]}
               >
                 <Text style={[styles.filterPillText, activeGroupId === null && styles.filterPillTextActive]}>
                   All Groups
@@ -141,7 +153,7 @@ export function StandingsModal({
                   glassEffectStyle="regular"
                   isInteractive
                   tintColor={activeGroupId === g.id ? Colors.accent : undefined}
-                  style={styles.filterPill}
+                  style={[styles.filterPill, activeGroupId === g.id && Platform.OS !== 'ios' && styles.filterPillSelectedFallback]}
                 >
                   <Text
                     style={[styles.filterPillText, activeGroupId === g.id && styles.filterPillTextActive]}
@@ -191,7 +203,9 @@ const styles = StyleSheet.create({
   filterRow: { flexGrow: 0, height: 48, marginBottom: Spacing.s2 },
   filterRowContent: { gap: Spacing.s2, paddingHorizontal: Spacing.s4 },
   filterPill: {
-    height: 36,
+    // 44pt to match every other tappable pill in the app (DateStrip's
+    // segment, MotorsportStandingsModal's boardTab) — was 36pt.
+    height: 44,
     paddingHorizontal: Spacing.s3,
     borderRadius: Radius.pill,
     alignItems: 'center',
@@ -199,6 +213,10 @@ const styles = StyleSheet.create({
   },
   filterPillText: { color: Colors.text, fontSize: 13, fontFamily: Fonts.semibold, fontWeight: '600' },
   filterPillTextActive: { color: Colors.onAccent },
+  // tintColor is iOS-only — without this, a selected pill on Android/web
+  // gets no background fill, leaving near-black filterPillTextActive text
+  // on the app's own near-black background.
+  filterPillSelectedFallback: { backgroundColor: Colors.accent },
   scrollContent: { padding: Spacing.s4, paddingTop: 0, gap: Spacing.s4 },
   empty: { color: Colors.textMuted, textAlign: 'center', marginTop: Spacing.s6 },
   groupCard: {
