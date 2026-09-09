@@ -1,8 +1,9 @@
 import { createContext, useContext, useMemo, type ReactNode } from 'react';
 import { LLAMA3_2_3B_SPINQUANT, useLLM, type Message } from 'react-native-executorch';
 
-import { getMotorsportStandings, getTeamInjuries, getTeamStanding } from '@/services/api';
+import { getGamePredictor, getMotorsportStandings, getTeamInjuries, getTeamNews, getTeamStanding } from '@/services/api';
 import type {
+  GamePredictor,
   GameTeam,
   MotorsportCircuit,
   MotorsportResult,
@@ -16,15 +17,16 @@ import type {
 const SYSTEM_PROMPT =
   'You are a concise, sharp sports analyst. Your training data has a cutoff date, so any specific facts you ' +
   "recall about rosters, injuries, trades, or coaching staff may be stale — do not state them. Base your pick " +
-  'strictly on the records, standings, injuries, current score, and win-probability figures given to you in ' +
-  "this message; if you don't have enough given data to justify a specific factor, speak generally about form " +
-  'and matchup context instead of naming players or citing facts not provided. Pay attention to the season ' +
-  'stage: preseason results are a weak predictor of team quality (rosters are experimental, starters play ' +
-  'limited snaps), so hedge accordingly for preseason games rather than treating the score as a strong signal. ' +
-  'Respond in 3-5 sentences: pick a likely winner, give one key factor driving the pick grounded in the ' +
+  'strictly on the records, standings, injuries, current score, recent team news, and win-probability/predictor ' +
+  "figures given to you in this message; if you don't have enough given data to justify a specific factor, speak " +
+  'generally about form and matchup context instead of naming players or citing facts not provided. Pay attention ' +
+  'to the season stage: preseason results are a weak predictor of team quality (rosters are experimental, starters ' +
+  'play limited snaps), so hedge accordingly for preseason games rather than treating the score as a strong ' +
+  'signal. Respond in 3-5 sentences: pick a likely winner, give one key factor driving the pick grounded in the ' +
   'provided data, and note one thing that could flip it. No headers, no bullet points, plain prose.';
 
 interface AnalyzeArgs {
+  gameId: string;
   leagueId: string;
   leagueLabel: string;
   seasonStage: SeasonStage;
@@ -66,7 +68,7 @@ interface LocalAIContextValue {
 
 const LocalAIContext = createContext<LocalAIContextValue | null>(null);
 
-function teamContextLine(team: GameTeam, standing: TeamStanding | null, injuries: TeamInjury[]): string {
+function teamContextLine(team: GameTeam, standing: TeamStanding | null, injuries: TeamInjury[], news: string[]): string {
   const splits = [team.homeRecord && `home ${team.homeRecord}`, team.roadRecord && `road ${team.roadRecord}`]
     .filter(Boolean)
     .join(', ');
@@ -82,11 +84,13 @@ function teamContextLine(team: GameTeam, standing: TeamStanding | null, injuries
   const injuryBit = injuries.length
     ? `injuries: ${injuries.map((i) => `${i.playerName}${i.position ? ` (${i.position})` : ''} - ${i.status}`).join(', ')}`
     : null;
+  const newsBit = news.length ? `recent news: ${news.join(' | ')}` : null;
   return [
     `${team.name} — ${team.record || 'record unavailable'}`,
     splits && `(${splits})`,
     standingBits && `[${standingBits}]`,
     injuryBit,
+    newsBit,
   ]
     .filter(Boolean)
     .join(' ');
@@ -95,7 +99,9 @@ function teamContextLine(team: GameTeam, standing: TeamStanding | null, injuries
 function buildUserMessage(
   args: AnalyzeArgs,
   standings: { home: TeamStanding | null; away: TeamStanding | null },
-  injuries: { home: TeamInjury[]; away: TeamInjury[] }
+  injuries: { home: TeamInjury[]; away: TeamInjury[] },
+  news: { home: string[]; away: string[] },
+  predictor: GamePredictor | null
 ): string {
   const { leagueLabel, seasonStage, home, away, liveWinProbability } = args;
   const scoreLine =
@@ -106,12 +112,20 @@ function buildUserMessage(
     ? `ESPN's live win-probability model right now: ${home.name} ${Math.round(liveWinProbability.home * 100)}%, ` +
       `${away.name} ${Math.round(liveWinProbability.away * 100)}%`
     : null;
+  // Distinct from probabilityLine above — this is ESPN's pregame BPI-based
+  // Matchup Predictor, not the live in-game model, and the two shouldn't be
+  // conflated in the prompt.
+  const predictorLine = predictor
+    ? `ESPN's pregame Matchup Predictor: ${home.name} ${Math.round(predictor.homeWinPct)}%, ` +
+      `${away.name} ${Math.round(predictor.awayWinPct)}%`
+    : null;
   return [
     `${leagueLabel} matchup — ${seasonStage}.`,
-    `Away: ${teamContextLine(away, standings.away, injuries.away)}`,
-    `Home: ${teamContextLine(home, standings.home, injuries.home)}`,
+    `Away: ${teamContextLine(away, standings.away, injuries.away, news.away)}`,
+    `Home: ${teamContextLine(home, standings.home, injuries.home, news.home)}`,
     scoreLine,
     probabilityLine,
+    predictorLine,
   ]
     .filter(Boolean)
     .join('\n');
@@ -174,6 +188,25 @@ async function safeStanding(leagueId: string, teamId: string | null): Promise<Te
   }
 }
 
+async function safeTeamNews(leagueId: string, teamId: string | null): Promise<string[]> {
+  if (!teamId) return [];
+  try {
+    return await getTeamNews(leagueId, teamId);
+  } catch {
+    return [];
+  }
+}
+
+async function safePredictor(leagueId: string, gameId: string): Promise<GamePredictor | null> {
+  try {
+    return await getGamePredictor(leagueId, gameId);
+  } catch {
+    // Absent-and-not-yet-computed is already handled inside getGamePredictor
+    // (returns null there) — this only catches an actual network/parse failure.
+    return null;
+  }
+}
+
 export function LocalAIProvider({ children }: { children: ReactNode }) {
   const llm = useLLM({ model: LLAMA3_2_3B_SPINQUANT });
 
@@ -183,12 +216,15 @@ export function LocalAIProvider({ children }: { children: ReactNode }) {
       downloadProgress: llm.downloadProgress,
       error: llm.error?.message ?? null,
       analyzeMatchup: async (args) => {
-        const { leagueId, home, away } = args;
-        const [homeStanding, awayStanding, homeInjuries, awayInjuries] = await Promise.all([
+        const { gameId, leagueId, home, away } = args;
+        const [homeStanding, awayStanding, homeInjuries, awayInjuries, homeNews, awayNews, predictor] = await Promise.all([
           safeStanding(leagueId, home.id),
           safeStanding(leagueId, away.id),
           safeInjuries(leagueId, home.id),
           safeInjuries(leagueId, away.id),
+          safeTeamNews(leagueId, home.id),
+          safeTeamNews(leagueId, away.id),
+          safePredictor(leagueId, gameId),
         ]);
         const chat: Message[] = [
           { role: 'system', content: SYSTEM_PROMPT },
@@ -197,7 +233,9 @@ export function LocalAIProvider({ children }: { children: ReactNode }) {
             content: buildUserMessage(
               args,
               { home: homeStanding, away: awayStanding },
-              { home: homeInjuries, away: awayInjuries }
+              { home: homeInjuries, away: awayInjuries },
+              { home: homeNews, away: awayNews },
+              predictor
             ),
           },
         ];

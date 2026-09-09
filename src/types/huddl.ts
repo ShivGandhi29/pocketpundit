@@ -159,6 +159,14 @@ export interface TeamInjury {
   status: string | null;
 }
 
+/** ESPN's own pregame "Matchup Predictor" (BPI-based) — distinct from the
+ * live in-game win-probability model, and only computed once ESPN has run
+ * it for a given game (absent for games far enough out, not an error). */
+export interface GamePredictor {
+  homeWinPct: number;
+  awayWinPct: number;
+}
+
 export interface TeamStanding {
   record: string | null;
   streak: string | null;

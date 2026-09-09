@@ -8,9 +8,10 @@ import { GameStatsTabs } from '@/components/GameStatsTabs';
 import { GlassIconButton } from '@/components/GlassIconButton';
 import { ScoreBug } from '@/components/ScoreBug';
 import { useLocalAI } from '@/contexts/LocalAIContext';
+import { getGamePredictor } from '@/services/api';
 import { Colors, Radius, Spacing } from '@/constants/theme';
 import { Fonts } from '@/constants/fonts';
-import type { Game, GameTeam } from '@/types/huddl';
+import type { Game, GamePredictor, GameTeam } from '@/types/huddl';
 
 export function GameDetailModal({
   game,
@@ -27,6 +28,7 @@ export function GameDetailModal({
   const ai = useLocalAI();
   const [status, setStatus] = useState<'idle' | 'loading' | 'done' | 'error'>('idle');
   const [text, setText] = useState('');
+  const [predictor, setPredictor] = useState<GamePredictor | null>(null);
   // The Modal stays mounted between games (just hidden), so a slow in-flight
   // analysis for a since-closed game could otherwise resolve and overwrite
   // whatever game is open by then. This tracks which game a run belongs to
@@ -41,7 +43,27 @@ export function GameDetailModal({
   useEffect(() => {
     setStatus('idle');
     setText('');
+    setPredictor(null);
   }, [game?.id]);
+
+  // Unlike the AI text, this is a plain ESPN fact (their own Matchup
+  // Predictor win %) — fetched eagerly and shown regardless of whether the
+  // on-device analysis has been run, not folded into the LLM's prose where
+  // it might get paraphrased or dropped.
+  useEffect(() => {
+    if (!game || game.state === 'post') return;
+    let cancelled = false;
+    getGamePredictor(leagueId, game.id)
+      .then((result) => {
+        if (!cancelled) setPredictor(result);
+      })
+      .catch(() => {
+        // Best-effort — a missing predictor just means the line doesn't render.
+      });
+    return () => {
+      cancelled = true;
+    };
+  }, [game?.id, game?.state, leagueId]);
 
   function runAnalysis() {
     if (!game) return;
@@ -50,6 +72,7 @@ export function GameDetailModal({
     setStatus('loading');
     setText('');
     ai.analyzeMatchup({
+      gameId: game.id,
       leagueId,
       leagueLabel,
       seasonStage: game.seasonStage,
@@ -159,6 +182,15 @@ export function GameDetailModal({
                         </Pressable>
                       </>
                     )}
+                    {/* A plain ESPN fact, not AI-generated — shown explicitly rather
+                        than left to the model's prose, which might paraphrase or
+                        drop the exact number. */}
+                    {predictor ? (
+                      <Text style={styles.predictorLine}>
+                        ESPN's Matchup Predictor: {game.home.name} {Math.round(predictor.homeWinPct)}% ·{' '}
+                        {game.away.name} {Math.round(predictor.awayWinPct)}%
+                      </Text>
+                    ) : null}
                   </>
                 ) : null}
 
@@ -204,6 +236,14 @@ const styles = StyleSheet.create({
   analyzeBtnText: { color: Colors.onAccent, fontFamily: Fonts.bold, fontWeight: '700', fontSize: 15 },
   reanalyzeBtn: { alignSelf: 'flex-start', minHeight: 44, justifyContent: 'center', marginTop: Spacing.s2 },
   reanalyzeBtnText: { color: Colors.accent, fontFamily: Fonts.semibold, fontWeight: '600', fontSize: 13 },
+  predictorLine: {
+    color: Colors.textMuted,
+    fontSize: 12,
+    marginTop: Spacing.s3,
+    paddingTop: Spacing.s3,
+    borderTopWidth: 1,
+    borderTopColor: Colors.border,
+  },
   statsSection: {
     marginTop: Spacing.s5,
     paddingTop: Spacing.s4,

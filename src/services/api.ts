@@ -1,5 +1,6 @@
 import type {
   Game,
+  GamePredictor,
   GameSummary,
   League,
   MotorsportEvent,
@@ -482,6 +483,40 @@ export async function getTeamInjuries(leagueId: string, teamId: string): Promise
   // Cap it — a compact list of who's out is useful grounding for the AI prompt;
   // a full injury report for every roster spot is just noise for that purpose.
   return injured.slice(0, 8);
+}
+
+// ESPN's own "Matchup Predictor" (BPI-based pregame win probability) — lives
+// on the same summary endpoint as getGameSummary's boxscore, but fetched
+// separately here since the AI-analysis flow that wants this doesn't
+// otherwise touch the boxscore at all. Live-checked: present for an NFL
+// regular-season game, absent (not erroring) for one far enough out that
+// ESPN hasn't computed it yet — a missing predictor is a normal case, not a
+// parse failure, so this returns null rather than throwing.
+export async function getGamePredictor(leagueId: string, eventId: string): Promise<GamePredictor | null> {
+  const { sport, league } = leaguePath(leagueId);
+  const payload = await fetchEspn<any>(
+    `https://site.api.espn.com/apis/site/v2/sports/${sport}/${league}/summary?event=${eventId}`
+  );
+  const homeWinPct = parseFloat(payload?.predictor?.homeTeam?.gameProjection);
+  const awayWinPct = parseFloat(payload?.predictor?.awayTeam?.gameProjection);
+  if (!Number.isFinite(homeWinPct) || !Number.isFinite(awayWinPct)) return null;
+  return { homeWinPct, awayWinPct };
+}
+
+// The `news` block embedded in the game summary endpoint is generic
+// league-wide headlines, not scoped to the two teams playing (live-checked:
+// a Patriots @ Seahawks game's summary returned an unrelated Lions/Saints
+// headline) — this dedicated `?team=` query is what actually returns
+// team-relevant articles.
+export async function getTeamNews(leagueId: string, teamId: string, limit = 3): Promise<string[]> {
+  const { sport, league } = leaguePath(leagueId);
+  const payload = await fetchEspn<any>(
+    `https://site.api.espn.com/apis/site/v2/sports/${sport}/${league}/news?team=${teamId}`
+  );
+  return (payload?.articles ?? [])
+    .map((a: any) => a?.headline)
+    .filter((headline: unknown): headline is string => typeof headline === 'string' && headline.length > 0)
+    .slice(0, limit);
 }
 
 // Standings lives under a different base path than every other endpoint here
