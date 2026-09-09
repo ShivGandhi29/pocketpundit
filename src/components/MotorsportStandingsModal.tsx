@@ -104,7 +104,7 @@ export function MotorsportStandingsModal({
           </View>
         ) : null}
 
-        <ScrollView contentContainerStyle={styles.scrollContent}>
+        <ScrollView contentContainerStyle={styles.scrollContent} showsVerticalScrollIndicator={false}>
           {error ? (
             <Text style={styles.empty}>Could not load standings ({error}).</Text>
           ) : !standings ? (
@@ -151,8 +151,6 @@ const styles = StyleSheet.create({
   tableCard: {
     backgroundColor: Colors.surface,
     borderRadius: Radius.md,
-    borderWidth: 1,
-    borderColor: Colors.border,
     overflow: 'hidden',
   },
   tableHeadRow: {
@@ -170,8 +168,6 @@ const styles = StyleSheet.create({
     gap: Spacing.s2,
     paddingHorizontal: Spacing.s3,
     paddingVertical: Spacing.s2,
-    borderTopWidth: 1,
-    borderTopColor: Colors.border,
   },
   rank: { width: 28, color: Colors.text, fontSize: 13, fontFamily: Fonts.bold, fontWeight: '700', textAlign: 'center', fontVariant: ['tabular-nums'] },
   flag: { width: 20, height: 20 },

@@ -126,7 +126,7 @@ export function LeaguePicker({
         ) : null}
       </GlassView>
 
-      <ScrollView contentContainerStyle={styles.scrollContent} keyboardShouldPersistTaps="handled">
+      <ScrollView contentContainerStyle={styles.scrollContent} showsVerticalScrollIndicator={false} keyboardShouldPersistTaps="handled">
         {visibleLeagues.length === 0 ? (
           <Text style={styles.empty}>No leagues match “{query}”.</Text>
         ) : (
@@ -272,16 +272,12 @@ const styles = StyleSheet.create({
     height: 18,
     borderRadius: 9,
     backgroundColor: Colors.accent,
-    borderWidth: 2,
-    borderColor: Colors.surface,
     alignItems: 'center',
     justifyContent: 'center',
   },
   tileLabel: { color: Colors.text, fontSize: 12, fontFamily: Fonts.bold, fontWeight: '700', textAlign: 'center' },
   footer: {
     paddingTop: Spacing.s3,
-    borderTopWidth: 1,
-    borderTopColor: Colors.border,
   },
   // Explicit height on the ScrollView's own style (not just contentContainerStyle)
   // — otherwise a horizontal scroller stretches to fill this flex-column footer.

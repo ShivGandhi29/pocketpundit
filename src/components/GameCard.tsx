@@ -106,7 +106,7 @@ export const GameCard = memo(function GameCard({
         ]}
         start={{ x: 0, y: 0 }}
         end={{ x: 1, y: 0 }}
-        style={[styles.card, favorite && styles.cardFavorite]}
+        style={styles.card}
       >
         {isPre ? (
           <>
@@ -140,14 +140,11 @@ export const GameCard = memo(function GameCard({
 
 const styles = StyleSheet.create({
   card: {
-    borderWidth: 0,
-    borderColor: Colors.border,
     borderRadius: Radius.md,
     paddingVertical: Spacing.s3,
     paddingHorizontal: Spacing.s3,
     alignItems: "center",
   },
-  cardFavorite: { borderColor: Colors.accentStrong },
   pressed: { opacity: 0.85 },
   headlineTime: {
     color: Colors.text,

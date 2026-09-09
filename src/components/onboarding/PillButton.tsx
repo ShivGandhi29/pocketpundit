@@ -1,7 +1,7 @@
 import { Pressable, StyleSheet, type StyleProp, type ViewStyle } from 'react-native';
 import { Text } from '@/components/AppText';
 
-import { ButtonLabel, OutlinePillBorder } from '@/constants/onboardingTheme';
+import { ButtonLabel } from '@/constants/onboardingTheme';
 import { Colors, Elevation, Radius, Spacing } from '@/constants/theme';
 import { Fonts } from '@/constants/fonts';
 
@@ -55,7 +55,7 @@ const styles = StyleSheet.create({
     paddingHorizontal: Spacing.s5,
   },
   primary: { backgroundColor: Colors.accent },
-  outline: { backgroundColor: 'transparent', borderWidth: 1, borderColor: OutlinePillBorder },
+  outline: { backgroundColor: Colors.surfaceRaised },
   disabled: { opacity: 0.4 },
   pressed: { opacity: 0.85 },
   label: {

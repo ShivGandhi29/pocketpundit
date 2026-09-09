@@ -1,5 +1,3 @@
-import { Colors } from '@/constants/theme';
-
 // Onboarding-only styling tokens, adapted from the Spotify entry in the
 // awesome-design DESIGN.md library (.claude/skills/awesome-design). Spotify's
 // component geometry (full-pill buttons, bold/regular type contrast, heavy
@@ -16,8 +14,3 @@ import { Colors } from '@/constants/theme';
 export const ButtonLabel = {
   fontSize: 15,
 };
-
-// Stands in for Spotify's `#7c7c7c` outlined-button border, tinted to this
-// app's own text color instead of a raw gray so it stays consistent with the
-// rest of the palette.
-export const OutlinePillBorder = `${Colors.text}47`; // ~28% alpha

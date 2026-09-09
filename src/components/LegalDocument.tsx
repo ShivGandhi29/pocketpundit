@@ -23,7 +23,7 @@ export function LegalDocument({ title, updated, sections }: { title: string; upd
         </Text>
         <View style={styles.headerSpacer} />
       </View>
-      <ScrollView contentContainerStyle={styles.scrollContent}>
+      <ScrollView contentContainerStyle={styles.scrollContent} showsVerticalScrollIndicator={false}>
         <Text style={styles.updated}>Last updated {updated}</Text>
         {sections.map((section) => (
           <View key={section.heading} style={styles.section}>
@@ -46,8 +46,6 @@ const styles = StyleSheet.create({
     justifyContent: 'space-between',
     paddingHorizontal: Spacing.s2,
     paddingVertical: Spacing.s2,
-    borderBottomWidth: 1,
-    borderBottomColor: Colors.border,
   },
   headerSpacer: { width: 48, height: 48 },
   headerTitle: { flex: 1, textAlign: 'center', color: Colors.text, fontSize: 17, fontFamily: Fonts.bold, fontWeight: '700' },

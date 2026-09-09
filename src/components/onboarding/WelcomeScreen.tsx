@@ -15,7 +15,7 @@ import type { League } from '@/types/huddl';
 // onboarding, and a static mock game would misrepresent live data.
 export function WelcomeScreen({ leagues, onGetStarted }: { leagues: League[]; onGetStarted: () => void }) {
   return (
-    <ScrollView contentContainerStyle={styles.scrollContent}>
+    <ScrollView contentContainerStyle={styles.scrollContent} showsVerticalScrollIndicator={false}>
       <Text style={styles.brand} accessibilityRole="header">
         Huddl
       </Text>
@@ -66,7 +66,7 @@ const styles = StyleSheet.create({
   heroText: { paddingHorizontal: Spacing.s4, marginBottom: Spacing.s6, gap: Spacing.s4 },
   tagline: { color: Colors.text, fontSize: 22, fontFamily: Fonts.bold, fontWeight: '700', lineHeight: 29, textAlign: 'center' },
   getStarted: { alignSelf: 'center', minWidth: 200 },
-  preview: { paddingTop: Spacing.s3, borderTopWidth: 1, borderTopColor: Colors.border },
+  preview: { paddingTop: Spacing.s3 },
   previewLabel: {
     color: Colors.textMuted,
     fontSize: 13,

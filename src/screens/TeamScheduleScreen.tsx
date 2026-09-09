@@ -111,6 +111,7 @@ export function TeamScheduleScreen({
           data={schedule}
           keyExtractor={(g) => g.id}
           contentContainerStyle={styles.list}
+          showsVerticalScrollIndicator={false}
           renderItem={({ item }) => <ScheduleRow game={item} />}
         />
       )}
@@ -126,8 +127,6 @@ const styles = StyleSheet.create({
     justifyContent: 'space-between',
     paddingHorizontal: Spacing.s3,
     paddingVertical: Spacing.s2,
-    borderBottomWidth: 1,
-    borderBottomColor: Colors.border,
   },
   backBtn: { flexDirection: 'row', alignItems: 'center', minWidth: 56, minHeight: 44 },
   backBtnText: { color: Colors.accent, fontFamily: Fonts.semibold, fontWeight: '600', fontSize: 15 },
@@ -141,8 +140,6 @@ const styles = StyleSheet.create({
     alignItems: 'center',
     justifyContent: 'space-between',
     backgroundColor: Colors.surface,
-    borderWidth: 1,
-    borderColor: Colors.border,
     borderRadius: Radius.md,
     padding: Spacing.s3,
   },

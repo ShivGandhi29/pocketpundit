@@ -238,7 +238,7 @@ export function TeamPicker({
         ) : null}
       </View>
 
-      <ScrollView contentContainerStyle={styles.scrollContent} keyboardShouldPersistTaps="handled">
+      <ScrollView contentContainerStyle={styles.scrollContent} showsVerticalScrollIndicator={false} keyboardShouldPersistTaps="handled">
         {teamLeagues.length === 0 ? (
           <Text style={styles.muted}>Add a league with teams first, then come back here to pick favorites.</Text>
         ) : (
@@ -373,8 +373,6 @@ const styles = StyleSheet.create({
     height: 18,
     borderRadius: 9,
     backgroundColor: Colors.accent,
-    borderWidth: 2,
-    borderColor: Colors.surface,
     alignItems: 'center',
     justifyContent: 'center',
   },
@@ -386,8 +384,6 @@ const styles = StyleSheet.create({
     paddingHorizontal: Spacing.s4,
     paddingTop: Spacing.s3,
     paddingBottom: Spacing.s4,
-    borderTopWidth: 1,
-    borderTopColor: Colors.border,
   },
   // Explicit height on the ScrollView's own style (not just contentContainerStyle)
   // — otherwise a horizontal scroller stretches to fill this flex-column footer.

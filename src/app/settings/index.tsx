@@ -15,19 +15,17 @@ function SettingsRow({
   icon,
   label,
   onPress,
-  isLast,
 }: {
   icon: ComponentProps<typeof Ionicons>['name'];
   label: string;
   onPress: () => void;
-  isLast?: boolean;
 }) {
   return (
     <Pressable
       onPress={onPress}
       accessibilityRole="button"
       accessibilityLabel={label}
-      style={({ pressed }) => [styles.row, !isLast && styles.rowDivider, pressed && styles.rowPressed]}
+      style={({ pressed }) => [styles.row, pressed && styles.rowPressed]}
     >
       <View style={styles.rowIconWrap}>
         <Ionicons name={icon} size={18} color={Colors.text} />
@@ -51,13 +49,13 @@ export default function SettingsHome() {
         <View style={styles.headerSpacer} />
       </View>
 
-      <ScrollView contentContainerStyle={styles.scrollContent}>
+      <ScrollView contentContainerStyle={styles.scrollContent} showsVerticalScrollIndicator={false}>
         <Text style={styles.groupHeading} accessibilityRole="header">
           Preferences
         </Text>
         <View style={styles.group}>
           <SettingsRow icon="trophy-outline" label="Leagues" onPress={() => router.push('/settings/leagues')} />
-          <SettingsRow icon="star-outline" label="Favorite Teams" onPress={() => router.push('/settings/teams')} isLast />
+          <SettingsRow icon="star-outline" label="Favorite Teams" onPress={() => router.push('/settings/teams')} />
         </View>
 
         <Text style={styles.groupHeading} accessibilityRole="header">
@@ -65,7 +63,7 @@ export default function SettingsHome() {
         </Text>
         <View style={styles.group}>
           <SettingsRow icon="shield-checkmark-outline" label="Privacy Policy" onPress={() => router.push('/settings/privacy')} />
-          <SettingsRow icon="document-text-outline" label="Terms & Conditions" onPress={() => router.push('/settings/terms')} isLast />
+          <SettingsRow icon="document-text-outline" label="Terms & Conditions" onPress={() => router.push('/settings/terms')} />
         </View>
 
         {__DEV__ ? (
@@ -78,7 +76,6 @@ export default function SettingsHome() {
                 icon="eye-outline"
                 label="Preview Welcome Screen"
                 onPress={() => router.push('/settings/dev-welcome-preview')}
-                isLast
               />
             </View>
           </>
@@ -113,8 +110,6 @@ const styles = StyleSheet.create({
   group: {
     backgroundColor: Colors.surface,
     borderRadius: Radius.md,
-    borderWidth: 1,
-    borderColor: Colors.border,
     overflow: 'hidden',
   },
   row: {
@@ -124,7 +119,6 @@ const styles = StyleSheet.create({
     minHeight: 52,
     paddingHorizontal: Spacing.s3,
   },
-  rowDivider: { borderBottomWidth: 1, borderBottomColor: Colors.border },
   rowPressed: { backgroundColor: Colors.surfaceRaised },
   rowIconWrap: { width: 24, alignItems: 'center' },
   rowLabel: { flex: 1, color: Colors.text, fontSize: 15, fontFamily: Fonts.semibold, fontWeight: '600' },

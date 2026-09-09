@@ -143,7 +143,7 @@ export function MotorsportDetailModal({
             </View>
             <GlassIconButton name="close" size={18} onPress={onClose} accessibilityLabel="Close" />
           </View>
-          <ScrollView contentContainerStyle={styles.scrollContent}>
+          <ScrollView contentContainerStyle={styles.scrollContent} showsVerticalScrollIndicator={false}>
             {error ? (
               <Text style={styles.error}>Could not load this race ({error}).</Text>
             ) : !detail ? (
@@ -275,8 +275,6 @@ const styles = StyleSheet.create({
     alignItems: 'center',
     justifyContent: 'space-between',
     padding: Spacing.s3,
-    borderBottomWidth: 1,
-    borderBottomColor: Colors.border,
   },
   headerTitleWrap: { flex: 1, marginRight: Spacing.s2 },
   headerTitle: { color: Colors.text, fontSize: 16, fontFamily: Fonts.bold, fontWeight: '700' },
@@ -285,7 +283,7 @@ const styles = StyleSheet.create({
   error: { color: Colors.live, fontSize: 14, textAlign: 'center', marginVertical: Spacing.s4 },
   empty: { color: Colors.textMuted, fontSize: 14 },
   sectionHeading: { color: Colors.accent, fontSize: 15, fontFamily: Fonts.bold, fontWeight: '700', marginBottom: Spacing.s2 },
-  sectionHeadingSpaced: { marginTop: Spacing.s5, paddingTop: Spacing.s4, borderTopWidth: 1, borderTopColor: Colors.border },
+  sectionHeadingSpaced: { marginTop: Spacing.s5, paddingTop: Spacing.s4 },
   analysisHeading: { color: Colors.accent, fontSize: 15, fontFamily: Fonts.bold, fontWeight: '700', marginBottom: Spacing.s2 },
   loadingRow: { flexDirection: 'row', alignItems: 'center', gap: Spacing.s2, minHeight: 60 },
   loadingText: { color: Colors.textMuted, fontSize: 15 },
@@ -330,8 +328,6 @@ const styles = StyleSheet.create({
     gap: Spacing.s2,
     paddingVertical: Spacing.s2,
     paddingHorizontal: Spacing.s3,
-    borderBottomWidth: 1,
-    borderBottomColor: Colors.border,
   },
   resultRowWinner: { backgroundColor: `${Colors.accent}1a` },
   resultPosition: { width: 24, color: Colors.textMuted, fontSize: 14, fontFamily: Fonts.bold, fontWeight: '700', textAlign: 'center' },

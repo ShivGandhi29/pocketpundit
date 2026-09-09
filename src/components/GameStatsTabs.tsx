@@ -382,8 +382,6 @@ const styles = StyleSheet.create({
     justifyContent: 'space-between',
     marginBottom: Spacing.s3,
     paddingBottom: Spacing.s3,
-    borderBottomWidth: 1,
-    borderBottomColor: Colors.border,
   },
   leadersTeamHeaderSide: { flexDirection: 'row', alignItems: 'center', gap: Spacing.s2 },
   leadersTeamHeaderSideRight: { flexDirection: 'row-reverse' },
@@ -391,8 +389,6 @@ const styles = StyleSheet.create({
   leadersTeamAbbr: { color: Colors.text, fontSize: 15, fontFamily: Fonts.extrabold, fontWeight: '800' },
   leaderCompareRow: {
     paddingVertical: Spacing.s3,
-    borderBottomWidth: 1,
-    borderBottomColor: Colors.border,
   },
   leaderCompareLabel: {
     color: Colors.textMuted,
@@ -413,10 +409,12 @@ const styles = StyleSheet.create({
   textRight: { textAlign: 'right' },
   statGroup: { marginBottom: Spacing.s3 },
   statGroupLabel: { color: Colors.accent, fontSize: 13, fontFamily: Fonts.bold, fontWeight: '700', marginBottom: Spacing.s1 },
-  boxRow: { flexDirection: 'row', borderBottomWidth: 1, borderBottomColor: Colors.border },
+  boxRow: { flexDirection: 'row' },
   boxCell: {
     width: 56,
-    paddingVertical: Spacing.s1,
+    // A bit more than before — with the row divider gone, this padding is
+    // the only thing separating one row from the next.
+    paddingVertical: Spacing.s2,
     color: Colors.text,
     fontSize: 12,
     textAlign: 'right',
@@ -429,8 +427,6 @@ const styles = StyleSheet.create({
     justifyContent: 'space-between',
     marginBottom: Spacing.s3,
     paddingBottom: Spacing.s2,
-    borderBottomWidth: 1,
-    borderBottomColor: Colors.border,
   },
   teamStatsHeaderSide: { flexDirection: 'row', alignItems: 'center', gap: Spacing.s2 },
   teamStatsHeaderSideRight: { flexDirection: 'row-reverse' },
@@ -438,8 +434,6 @@ const styles = StyleSheet.create({
   teamStatsHeaderTeam: { color: Colors.text, fontSize: 13, fontFamily: Fonts.bold, fontWeight: '700' },
   teamStatsRow: {
     paddingVertical: Spacing.s2,
-    borderBottomWidth: 1,
-    borderBottomColor: Colors.border,
   },
   teamStatsValuesRow: { flexDirection: 'row', alignItems: 'center', marginBottom: Spacing.s1 },
   teamStatsValue: { flex: 1, color: Colors.text, fontSize: 14, fontFamily: Fonts.bold, fontWeight: '700' },

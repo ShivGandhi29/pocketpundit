@@ -90,8 +90,6 @@ const styles = StyleSheet.create({
   list: { padding: Spacing.s4, paddingTop: 0, gap: Spacing.s3 },
   card: {
     backgroundColor: Colors.surface,
-    borderWidth: 1,
-    borderColor: Colors.border,
     borderRadius: Radius.md,
     paddingVertical: Spacing.s3,
     paddingHorizontal: Spacing.s3,

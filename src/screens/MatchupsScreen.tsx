@@ -615,6 +615,7 @@ export function MatchupsScreen({
               styles.list,
               { paddingBottom: Spacing.s4 + insets.bottom },
             ]}
+            showsVerticalScrollIndicator={false}
             refreshControl={
               <RefreshControl
                 refreshing={refreshing}
@@ -666,6 +667,7 @@ export function MatchupsScreen({
               styles.list,
               { paddingBottom: Spacing.s4 + insets.bottom },
             ]}
+            showsVerticalScrollIndicator={false}
             refreshControl={
               <RefreshControl
                 refreshing={refreshing}
@@ -714,6 +716,7 @@ export function MatchupsScreen({
             styles.list,
             { paddingBottom: Spacing.s4 + insets.bottom },
           ]}
+          showsVerticalScrollIndicator={false}
           refreshControl={
             <RefreshControl
               refreshing={refreshing}
@@ -780,8 +783,6 @@ const styles = StyleSheet.create({
     justifyContent: "space-between",
     paddingHorizontal: Spacing.s4,
     paddingVertical: Spacing.s2,
-    borderBottomWidth: 0,
-    borderBottomColor: Colors.border,
   },
   brand: {
     color: Colors.text,

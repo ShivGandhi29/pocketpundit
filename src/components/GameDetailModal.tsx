@@ -115,7 +115,7 @@ export function GameDetailModal({
             </Text>
             <GlassIconButton name="close" size={18} onPress={onClose} accessibilityLabel="Close" />
           </View>
-          <ScrollView contentContainerStyle={styles.scrollContent}>
+          <ScrollView contentContainerStyle={styles.scrollContent} showsVerticalScrollIndicator={false}>
             {game ? (
               <>
                 <ScoreBug
@@ -213,8 +213,6 @@ const styles = StyleSheet.create({
     alignItems: 'center',
     justifyContent: 'space-between',
     padding: Spacing.s3,
-    borderBottomWidth: 1,
-    borderBottomColor: Colors.border,
   },
   headerTitle: { flex: 1, color: Colors.text, fontSize: 16, fontFamily: Fonts.bold, fontWeight: '700' },
   scrollContent: { padding: Spacing.s4 },
@@ -241,13 +239,9 @@ const styles = StyleSheet.create({
     fontSize: 12,
     marginTop: Spacing.s3,
     paddingTop: Spacing.s3,
-    borderTopWidth: 1,
-    borderTopColor: Colors.border,
   },
   statsSection: {
     marginTop: Spacing.s5,
     paddingTop: Spacing.s4,
-    borderTopWidth: 1,
-    borderTopColor: Colors.border,
   },
 });

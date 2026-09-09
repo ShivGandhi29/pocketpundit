@@ -155,7 +155,7 @@ export function StandingsModal({
           </ScrollView>
         ) : null}
 
-        <ScrollView contentContainerStyle={styles.scrollContent}>
+        <ScrollView contentContainerStyle={styles.scrollContent} showsVerticalScrollIndicator={false}>
           {error ? (
             <Text style={styles.empty}>Could not load standings ({error}).</Text>
           ) : !groups ? (
@@ -204,8 +204,6 @@ const styles = StyleSheet.create({
   groupCard: {
     backgroundColor: Colors.surface,
     borderRadius: Radius.md,
-    borderWidth: 1,
-    borderColor: Colors.border,
     overflow: 'hidden',
   },
   groupHeaderRow: {
@@ -229,8 +227,6 @@ const styles = StyleSheet.create({
     alignItems: 'center',
     paddingHorizontal: Spacing.s3,
     paddingVertical: Spacing.s2,
-    borderTopWidth: 1,
-    borderTopColor: Colors.border,
   },
   cell: { width: 40, color: Colors.text, fontSize: 13, fontFamily: Fonts.semibold, fontWeight: '600', textAlign: 'center', fontVariant: ['tabular-nums'] },
   headText: { color: Colors.textMuted, fontSize: 12, fontFamily: Fonts.bold, fontWeight: '700' },
