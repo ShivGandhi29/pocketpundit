@@ -8,7 +8,11 @@ export const Colors = {
   surfaceRaised: '#1b2230',
   border: '#262f40',
   text: '#eef1f6',
-  textMuted: '#93a0b4',
+  // Same value as `text` — plain white/off-white everywhere, no separate
+  // muted/secondary shade. The name is kept (rather than deleting the token
+  // and repointing 21 files' worth of usages to `Colors.text` directly) so
+  // this stays a single, easily-reversible source of truth.
+  textMuted: '#eef1f6',
   accent: '#4dd6a0',
   accentStrong: '#2fb583',
   live: '#ff6b6b',

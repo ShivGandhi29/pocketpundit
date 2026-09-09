@@ -283,7 +283,7 @@ export function MotorsportDetailModal({
                               accessibilityState={{ selected }}
                             >
                               <GlassView
-                                glassEffectStyle="regular"
+                                glassEffectStyle="clear"
                                 isInteractive
                                 tintColor={selected ? Colors.accent : undefined}
                                 style={[styles.sessionTab, selected && Platform.OS !== 'ios' && styles.sessionTabSelectedFallback]}

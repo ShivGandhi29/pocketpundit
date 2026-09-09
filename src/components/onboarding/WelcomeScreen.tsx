@@ -43,12 +43,15 @@ export function WelcomeScreen({ leagues, onGetStarted }: { leagues: League[]; on
 
 const styles = StyleSheet.create({
   scrollContent: { flexGrow: 1, paddingTop: Spacing.s5, paddingBottom: Spacing.s6 },
+  // Lilita One is a single static weight (no bold/italic style to fake-bold
+  // over), so fontWeight is left unset here — forcing one on a custom TTF
+  // makes iOS synthesize a distorted-looking bold instead of just using the
+  // glyphs as drawn.
   brand: {
     color: Colors.text,
-    fontSize: 26,
-    fontFamily: Fonts.extrabold,
-    fontWeight: '800',
-    letterSpacing: -0.4,
+    fontSize: 32,
+    fontFamily: Fonts.wordmark,
+    letterSpacing: -1,
     paddingHorizontal: Spacing.s4,
     marginBottom: Spacing.s4,
   },

@@ -218,7 +218,7 @@ export function TeamPicker({
       <View style={styles.headerArea}>
         <OnboardingHeader title="Favorite your teams" subtitle="Optional — their games get pinned to the top of your list." />
         {teamLeagues.length > 0 ? (
-          <GlassView glassEffectStyle="regular" style={styles.searchRow}>
+          <GlassView glassEffectStyle="clear" style={styles.searchRow}>
             <Ionicons name="search" size={18} color={Colors.textMuted} />
             <TextInput
               value={query}
@@ -273,7 +273,7 @@ export function TeamPicker({
               >
                 {({ pressed }) => (
                   <GlassView
-                    glassEffectStyle="regular"
+                    glassEffectStyle="clear"
                     isInteractive
                     tintColor={Colors.accent}
                     style={[styles.chip, pressed && styles.pressed]}

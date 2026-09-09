@@ -108,7 +108,7 @@ export function LeaguePicker({
     <SafeAreaView style={styles.container} edges={['top', 'bottom']}>
       <OnboardingHeader title="Pick your leagues" subtitle="Only matchups from these leagues will show up in your feed." />
 
-      <GlassView glassEffectStyle="regular" style={styles.searchRow}>
+      <GlassView glassEffectStyle="clear" style={styles.searchRow}>
         <Ionicons name="search" size={18} color={Colors.textMuted} />
         <TextInput
           value={query}
@@ -147,7 +147,7 @@ export function LeaguePicker({
                     >
                       {({ pressed }) => (
                         <GlassView
-                          glassEffectStyle="regular"
+                          glassEffectStyle="clear"
                           isInteractive
                           tintColor={checked ? Colors.accent : undefined}
                           style={[
@@ -199,7 +199,7 @@ export function LeaguePicker({
               >
                 {({ pressed }) => (
                   <GlassView
-                    glassEffectStyle="regular"
+                    glassEffectStyle="clear"
                     isInteractive
                     tintColor={Colors.accent}
                     style={[styles.chip, pressed && styles.pressed]}

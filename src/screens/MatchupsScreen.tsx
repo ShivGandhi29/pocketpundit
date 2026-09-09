@@ -40,6 +40,7 @@ import type {
   MotorsportSchedule,
   WeekCalendar,
 } from "@/types/huddl";
+import { favoriteKey } from "@/utils/favorites";
 import {
   addDays,
   dateWithOffset,
@@ -47,7 +48,6 @@ import {
   isSameLocalDay,
   toEspnDateParam,
 } from "@/utils/formatGameTime";
-import { favoriteKey } from "@/utils/favorites";
 
 // How many days ahead the "Upcoming" agenda looks — long enough to be
 // useful, short enough not to fan out into dozens of parallel ESPN requests
@@ -127,7 +127,8 @@ export function MatchupsScreen({
   // data for it at all (live-checked: `children: []` for golf/pga) — driver/
   // constructor standings only exist for genuine racing series.
   const isGolfTab = activeLeague?.sport === "golf";
-  const canShowMotorsportStandings = activeTab !== "all" && isMotorsportTab && !isGolfTab;
+  const canShowMotorsportStandings =
+    activeTab !== "all" && isMotorsportTab && !isGolfTab;
 
   // The very next race/tournament gets its own featured section (rendered as
   // one oversized card — see MotorsportEventCard's `featured` prop), the
@@ -194,13 +195,17 @@ export function MatchupsScreen({
   const isFavoriteTeam = useCallback(
     (leagueId: string, teamId: string | null) =>
       teamId
-        ? Object.prototype.hasOwnProperty.call(state.favoriteTeams, favoriteKey(leagueId, teamId))
+        ? Object.prototype.hasOwnProperty.call(
+            state.favoriteTeams,
+            favoriteKey(leagueId, teamId),
+          )
         : false,
     [state.favoriteTeams],
   );
   const isFavoriteGame = useCallback(
     (game: Game) =>
-      isFavoriteTeam(game.leagueId, game.home.id) || isFavoriteTeam(game.leagueId, game.away.id),
+      isFavoriteTeam(game.leagueId, game.home.id) ||
+      isFavoriteTeam(game.leagueId, game.away.id),
     [isFavoriteTeam],
   );
   const compareByFavoriteThenTime = useCallback(
@@ -515,10 +520,15 @@ export function MatchupsScreen({
                 accessibilityState={{ selected }}
               >
                 <GlassView
-                  glassEffectStyle="regular"
+                  glassEffectStyle="clear"
                   isInteractive
                   tintColor={selected ? Colors.accent : undefined}
-                  style={[styles.tab, selected && Platform.OS !== 'ios' && styles.tabSelectedFallback]}
+                  style={[
+                    styles.tab,
+                    selected &&
+                      Platform.OS !== "ios" &&
+                      styles.tabSelectedFallback,
+                  ]}
                 >
                   {item.logo ? (
                     // White backdrop so dark/transparent logo art (several
@@ -559,11 +569,19 @@ export function MatchupsScreen({
               accessibilityRole="button"
               accessibilityLabel="Add leagues"
             >
-              <GlassView glassEffectStyle="regular" isInteractive style={styles.tab}>
+              <GlassView
+                glassEffectStyle="clear"
+                isInteractive
+                style={styles.tab}
+              >
                 <View style={styles.tabIconWrap}>
                   <Ionicons name="add-outline" size={20} color={Colors.text} />
                 </View>
-                <Text style={styles.tabText} numberOfLines={1} maxFontSizeMultiplier={1.3}>
+                <Text
+                  style={styles.tabText}
+                  numberOfLines={1}
+                  maxFontSizeMultiplier={1.3}
+                >
                   Add
                 </Text>
               </GlassView>
@@ -790,12 +808,15 @@ const styles = StyleSheet.create({
     paddingHorizontal: Spacing.s4,
     paddingVertical: Spacing.s2,
   },
+  // Lilita One is a single static weight — no fontWeight override, since
+  // forcing one on a custom TTF makes iOS synthesize a distorted bold
+  // instead of rendering the glyphs as drawn (see WelcomeScreen's brand
+  // style for the same wordmark treatment).
   brand: {
     color: Colors.text,
-    fontSize: 18,
-    fontFamily: Fonts.bold,
-    fontWeight: "700",
-    letterSpacing: -0.2,
+    fontSize: 45,
+    fontFamily: Fonts.wordmark,
+    letterSpacing: -1,
   },
   topbarActions: {
     flexDirection: "row",

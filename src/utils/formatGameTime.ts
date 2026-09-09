@@ -89,11 +89,32 @@ export function isSameLocalDay(a: Date, b: Date): boolean {
   return a.getFullYear() === b.getFullYear() && a.getMonth() === b.getMonth() && a.getDate() === b.getDate();
 }
 
-const AGENDA_SECTION_DATE = new Intl.DateTimeFormat(undefined, { weekday: 'long', month: 'short', day: 'numeric' });
+// Built from separate weekday/month formatters rather than one combined
+// Intl.DateTimeFormat — a combined `{ weekday: 'long', month: 'long', day:
+// 'numeric' }` formatter inserts a locale-dependent comma after the weekday
+// ("Friday, September 11") that this label is deliberately meant not to have.
+const AGENDA_WEEKDAY = new Intl.DateTimeFormat(undefined, { weekday: 'long' });
+const AGENDA_MONTH = new Intl.DateTimeFormat(undefined, { month: 'long' });
+
+// 11th/12th/13th are the exception to the last-digit rule (they'd otherwise
+// read as "11st"/"12nd"/"13rd" going purely off the final digit).
+function ordinal(day: number): string {
+  if (day >= 11 && day <= 13) return `${day}th`;
+  switch (day % 10) {
+    case 1:
+      return `${day}st`;
+    case 2:
+      return `${day}nd`;
+    case 3:
+      return `${day}rd`;
+    default:
+      return `${day}th`;
+  }
+}
 
 /** Section-header label for an "Upcoming" agenda list — "Tomorrow" for the
- * very next day, otherwise a full weekday + date (e.g. "Thursday, Sep 10"). */
+ * very next day, otherwise a full weekday + date (e.g. "Friday 11th September"). */
 export function formatAgendaSectionLabel(date: Date, today: Date): string {
   if (isSameLocalDay(date, addDays(today, 1))) return 'Tomorrow';
-  return AGENDA_SECTION_DATE.format(date);
+  return `${AGENDA_WEEKDAY.format(date)} ${ordinal(date.getDate())} ${AGENDA_MONTH.format(date)}`;
 }

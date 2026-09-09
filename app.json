@@ -32,10 +32,11 @@
         "expo-font",
         {
           "fonts": [
-            "./node_modules/@expo-google-fonts/montserrat/400Regular/Montserrat_400Regular.ttf",
-            "./node_modules/@expo-google-fonts/montserrat/600SemiBold/Montserrat_600SemiBold.ttf",
-            "./node_modules/@expo-google-fonts/montserrat/700Bold/Montserrat_700Bold.ttf",
-            "./node_modules/@expo-google-fonts/montserrat/800ExtraBold/Montserrat_800ExtraBold.ttf"
+            "./node_modules/@expo-google-fonts/roboto/400Regular/Roboto_400Regular.ttf",
+            "./node_modules/@expo-google-fonts/roboto/600SemiBold/Roboto_600SemiBold.ttf",
+            "./node_modules/@expo-google-fonts/roboto/700Bold/Roboto_700Bold.ttf",
+            "./node_modules/@expo-google-fonts/roboto/800ExtraBold/Roboto_800ExtraBold.ttf",
+            "./node_modules/@expo-google-fonts/lilita-one/400Regular/LilitaOne_400Regular.ttf"
           ]
         }
       ],

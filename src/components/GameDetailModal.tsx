@@ -130,7 +130,12 @@ export function GameDetailModal({
         <SafeAreaView style={styles.sheet} edges={['top', 'bottom']}>
           <View style={styles.header}>
             <Text style={styles.headerTitle} numberOfLines={1} accessibilityRole="header">
-              {leagueLabel} · {game?.shortName || ''}
+              {/* ESPN's own shortName ("SF VS LAR") is all-caps with a raw
+                  "VS" — reads like a scoreboard ticker, not a sentence.
+                  Built from the same team fields ScoreBug/GameCard already
+                  use, with the same "away at home" phrasing as GameCard's
+                  accessibility label, so the header reads like normal text. */}
+              {leagueLabel} · {game ? `${game.away.abbreviation ?? game.away.name} at ${game.home.abbreviation ?? game.home.name}` : ''}
             </Text>
             <GlassIconButton name="close" size={18} onPress={onClose} accessibilityLabel="Close" />
           </View>
@@ -143,6 +148,14 @@ export function GameDetailModal({
                   onPressHome={() => viewSchedule(game.home)}
                 />
                 <Text style={styles.scoreBugHint}>Tap a team to see its schedule</Text>
+                <View style={styles.venueRow}>
+                  <Ionicons name="location-outline" size={14} color={Colors.textMuted} />
+                  <Text style={styles.venueText} numberOfLines={2}>
+                    Hosted by {game.home.name}
+                    {game.venue ? ` · ${game.venue}` : ''}
+                    {game.venueLocation ? `, ${game.venueLocation}` : ''}
+                  </Text>
+                </View>
 
                 {/* A prediction is only meaningful before/during a game — once
                     it's final there's nothing left to forecast, so this whole
@@ -237,6 +250,16 @@ const styles = StyleSheet.create({
   headerTitle: { flex: 1, color: Colors.text, fontSize: 16, fontFamily: Fonts.bold, fontWeight: '700' },
   scrollContent: { padding: Spacing.s4 },
   scoreBugHint: { color: Colors.textMuted, fontSize: 12, textAlign: 'center', marginTop: -Spacing.s3, marginBottom: Spacing.s4 },
+  venueRow: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    justifyContent: 'center',
+    gap: 6,
+    marginTop: -Spacing.s3,
+    marginBottom: Spacing.s4,
+    paddingHorizontal: Spacing.s4,
+  },
+  venueText: { color: Colors.textMuted, fontSize: 12, fontFamily: Fonts.semibold, fontWeight: '600', textAlign: 'center' },
   analysisHeadingRow: { flexDirection: 'row', alignItems: 'center', gap: 6, marginBottom: Spacing.s2 },
   analysisHeading: { color: Colors.accent, fontSize: 15, fontFamily: Fonts.bold, fontWeight: '700' },
   loadingRow: { flexDirection: 'row', alignItems: 'center', gap: Spacing.s2, minHeight: 60 },

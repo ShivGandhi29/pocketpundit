@@ -190,7 +190,7 @@ function BoxScoreTab({ summary, game }: { summary: GameSummary; game: Game }) {
             >
               {({ pressed }) => (
                 <GlassView
-                  glassEffectStyle="regular"
+                  glassEffectStyle="clear"
                   isInteractive
                   tintColor={selected ? Colors.accent : undefined}
                   style={[styles.teamToggle, selected && Platform.OS !== 'ios' && styles.teamToggleSelectedFallback, pressed && styles.pressed]}
@@ -347,7 +347,7 @@ function LeagueLeaderboard({ leagueId }: { leagueId: string }) {
             accessibilityState={{ selected: activeGroupId === null }}
           >
             <GlassView
-              glassEffectStyle="regular"
+              glassEffectStyle="clear"
               isInteractive
               tintColor={activeGroupId === null ? Colors.accent : undefined}
               style={[styles.filterPill, activeGroupId === null && Platform.OS !== 'ios' && styles.filterPillSelectedFallback]}
@@ -364,7 +364,7 @@ function LeagueLeaderboard({ leagueId }: { leagueId: string }) {
               accessibilityState={{ selected: activeGroupId === g.id }}
             >
               <GlassView
-                glassEffectStyle="regular"
+                glassEffectStyle="clear"
                 isInteractive
                 tintColor={activeGroupId === g.id ? Colors.accent : undefined}
                 style={[styles.filterPill, activeGroupId === g.id && Platform.OS !== 'ios' && styles.filterPillSelectedFallback]}
@@ -439,7 +439,7 @@ export function GameStatsTabs({ game, leagueId }: { game: Game; leagueId: string
             >
               {({ pressed }) => (
                 <GlassView
-                  glassEffectStyle="regular"
+                  glassEffectStyle="clear"
                   isInteractive
                   tintColor={selected ? Colors.accent : undefined}
                   style={[styles.tab, selected && Platform.OS !== 'ios' && styles.tabSelectedFallback, pressed && styles.pressed]}
@@ -481,7 +481,11 @@ const styles = StyleSheet.create({
     minHeight: 44,
     justifyContent: 'center',
     paddingHorizontal: Spacing.s3,
-    borderRadius: Radius.pill,
+    // Radius.md, not a full pill — matches every other fixed segmented tab
+    // bar in the app (DateStrip, MotorsportStandingsModal's Drivers/
+    // Constructors toggle); a full pill here was the one outlier still using
+    // chip geometry for a 3-way tab switcher rather than a tab.
+    borderRadius: Radius.md,
   },
   tabText: { color: Colors.text, fontSize: 13, fontFamily: Fonts.semibold, fontWeight: '600' },
   tabTextSelected: { color: Colors.onAccent },

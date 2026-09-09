@@ -157,6 +157,10 @@ export interface Game {
   home: GameTeam;
   away: GameTeam;
   venue: string | null;
+  /** "Seattle, WA" / "Bournemouth, England" — city plus state (US venues) or
+   * country (everywhere else), whichever ESPN's venue address actually
+   * carries. Null whenever venue itself is null or the address has neither. */
+  venueLocation: string | null;
   leagueId: string;
   /** ESPN's own live win-probability model, present only once a game is in progress. */
   liveWinProbability: { home: number; away: number } | null;

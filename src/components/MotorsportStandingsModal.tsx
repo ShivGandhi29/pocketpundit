@@ -91,7 +91,7 @@ export function MotorsportStandingsModal({
                   style={styles.boardFlex}
                 >
                   <GlassView
-                    glassEffectStyle="regular"
+                    glassEffectStyle="clear"
                     isInteractive
                     tintColor={selected ? Colors.accent : undefined}
                     style={[styles.boardTab, selected && Platform.OS !== 'ios' && styles.boardTabSelectedFallback]}

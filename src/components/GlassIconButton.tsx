@@ -53,7 +53,7 @@ export function GlassIconButton({
       accessibilityState={{ disabled, selected: active }}
     >
       <GlassView
-        glassEffectStyle="regular"
+        glassEffectStyle="clear"
         isInteractive
         tintColor={active ? Colors.accent : undefined}
         style={[
@@ -69,7 +69,15 @@ export function GlassIconButton({
 }
 
 const styles = StyleSheet.create({
-  circle: { width: 48, height: 48, borderRadius: Radius.pill, alignItems: 'center', justifyContent: 'center' },
+  // A rounded square, not a full circle — every icon-only control in the app
+  // (back, close, settings, favorite, standings) went through this one
+  // component, so a perfect circle here was the single most-repeated shape
+  // in the whole UI. Radius.lg gives it Apple's own "squircle" toolbar-glyph
+  // proportions (see Camera/Photos' back/close chrome) rather than the
+  // generic full-pill/full-circle look, and reads as a distinct family from
+  // both PillButton's full-pill CTA and the app's card-shaped content (which
+  // use Radius.pill and Radius.md respectively).
+  circle: { width: 48, height: 48, borderRadius: Radius.lg, alignItems: 'center', justifyContent: 'center' },
   activeFallback: { backgroundColor: Colors.accent },
   disabled: { opacity: 0.35 },
 });

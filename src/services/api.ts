@@ -348,6 +348,13 @@ function simplifyGames(payload: any): Omit<Game, 'leagueId'>[] {
       probability?.homeWinPercentage != null && probability?.awayWinPercentage != null
         ? { home: probability.homeWinPercentage, away: probability.awayWinPercentage }
         : null;
+    // US venues carry a state ("Baltimore, Maryland"); everywhere else ESPN
+    // sends a country instead ("Bournemouth, England") — live-checked against
+    // NFL, MLB, and EPL. Never both, so state takes priority when present.
+    const address = competition.venue?.address;
+    const venueLocation = address?.city
+      ? [address.city, address.state ?? address.country].filter(Boolean).join(', ')
+      : null;
     return {
       id: event.id,
       date: event.date,
@@ -358,6 +365,7 @@ function simplifyGames(payload: any): Omit<Game, 'leagueId'>[] {
       home: toTeam(home),
       away: toTeam(away),
       venue: competition.venue?.fullName ?? null,
+      venueLocation,
       liveWinProbability,
       seasonStage: seasonStageFromEvent(event),
     };

@@ -75,7 +75,7 @@ export function StandingsModal({
               accessibilityState={{ selected: activeGroupId === null }}
             >
               <GlassView
-                glassEffectStyle="regular"
+                glassEffectStyle="clear"
                 isInteractive
                 tintColor={activeGroupId === null ? Colors.accent : undefined}
                 style={[styles.filterPill, activeGroupId === null && Platform.OS !== 'ios' && styles.filterPillSelectedFallback]}
@@ -94,7 +94,7 @@ export function StandingsModal({
                 accessibilityState={{ selected: activeGroupId === g.id }}
               >
                 <GlassView
-                  glassEffectStyle="regular"
+                  glassEffectStyle="clear"
                   isInteractive
                   tintColor={activeGroupId === g.id ? Colors.accent : undefined}
                   style={[styles.filterPill, activeGroupId === g.id && Platform.OS !== 'ios' && styles.filterPillSelectedFallback]}
