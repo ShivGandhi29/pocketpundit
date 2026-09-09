@@ -5,7 +5,7 @@ import { PillButton } from '@/components/onboarding/PillButton';
 import { GamesListSkeleton } from '@/components/Skeleton';
 import { Colors, Spacing } from '@/constants/theme';
 import { Fonts } from '@/constants/fonts';
-import type { League } from '@/types/pocketpundit';
+import type { League } from '@/types/huddl';
 
 // First screen of onboarding — a hero intro before the leagues/teams
 // pickers, in the spirit of a dedicated sports app's welcome screen: brand
@@ -17,7 +17,7 @@ export function WelcomeScreen({ leagues, onGetStarted }: { leagues: League[]; on
   return (
     <ScrollView contentContainerStyle={styles.scrollContent}>
       <Text style={styles.brand} accessibilityRole="header">
-        PocketPundit
+        Huddl
       </Text>
 
       <ScrollView horizontal showsHorizontalScrollIndicator={false} style={styles.chipsRow} contentContainerStyle={styles.chipsContent}>

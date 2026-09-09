@@ -7,7 +7,7 @@ import { Colors, Radius, Spacing } from '@/constants/theme';
 import { Fonts } from '@/constants/fonts';
 import { formatKickoffDateLong, formatKickoffTime, formatKickoffZone } from '@/utils/formatGameTime';
 import { teamGradientColor } from '@/utils/teamGradient';
-import type { Game, GameTeam } from '@/types/pocketpundit';
+import type { Game, GameTeam } from '@/types/huddl';
 
 function TeamSide({ team, onPress }: { team: GameTeam; onPress?: () => void }) {
   return (

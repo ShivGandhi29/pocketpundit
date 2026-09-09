@@ -7,7 +7,7 @@ import { MatchupsScreen } from '@/screens/MatchupsScreen';
 import { LEAGUES } from '@/services/api';
 import { loadState, saveState } from '@/storage/state';
 import { Colors } from '@/constants/theme';
-import type { AppState } from '@/types/pocketpundit';
+import type { AppState } from '@/types/huddl';
 
 export default function Home() {
   const [state, setState] = useState<AppState | null>(null);

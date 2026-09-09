@@ -1,4 +1,4 @@
-# PocketPundit — Future Feature Plan
+# Huddl — Future Feature Plan
 
 Ideas captured for later implementation, not started yet. Each entry notes what
 already exists that's relevant and the open questions worth resolving before
@@ -47,8 +47,8 @@ Ambiguous on purpose — needs scoping before starting. Candidates:
 - Skipping straight to the matchups list for a returning (already-onboarded)
   user with a lighter-weight "welcome back" moment instead of the current
   instant jump.
-- Deep-link handling beyond what exists today (`pocketpundit://settings`,
-  `pocketpundit://` home) — e.g. a link straight into a specific game or
+- Deep-link handling beyond what exists today (`huddl://settings`,
+  `huddl://` home) — e.g. a link straight into a specific game or
   team.
 
 ## Deeper AI analysis

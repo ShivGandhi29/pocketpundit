@@ -14,6 +14,7 @@ export default function SettingsLayout() {
     <Stack screenOptions={{ headerShown: false, contentStyle: { backgroundColor: Colors.background } }}>
       <Stack.Screen name="index" />
       <Stack.Screen name="leagues" />
+      <Stack.Screen name="teams" />
       <Stack.Screen name="privacy" />
       <Stack.Screen name="terms" />
       <Stack.Screen name="dev-welcome-preview" />

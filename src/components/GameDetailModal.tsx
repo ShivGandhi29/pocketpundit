@@ -10,7 +10,7 @@ import { ScoreBug } from '@/components/ScoreBug';
 import { useLocalAI } from '@/contexts/LocalAIContext';
 import { Colors, Radius, Spacing } from '@/constants/theme';
 import { Fonts } from '@/constants/fonts';
-import type { Game, GameTeam } from '@/types/pocketpundit';
+import type { Game, GameTeam } from '@/types/huddl';
 
 export function GameDetailModal({
   game,

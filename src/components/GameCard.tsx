@@ -7,7 +7,7 @@ import { Pressable, StyleSheet, View } from "react-native";
 
 import { Fonts } from "@/constants/fonts";
 import { Colors, Radius, Spacing } from "@/constants/theme";
-import type { Game, GameTeam } from "@/types/pocketpundit";
+import type { Game, GameTeam } from "@/types/huddl";
 import { formatKickoffDate, formatKickoffTime } from "@/utils/formatGameTime";
 import { teamGradientColor } from "@/utils/teamGradient";
 

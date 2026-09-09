@@ -9,7 +9,7 @@ import { getMotorsportStandings } from '@/services/api';
 import { GlassIconButton } from '@/components/GlassIconButton';
 import { Colors, Radius, Spacing } from '@/constants/theme';
 import { Fonts } from '@/constants/fonts';
-import type { MotorsportStandingEntry, MotorsportStandings } from '@/types/pocketpundit';
+import type { MotorsportStandingEntry, MotorsportStandings } from '@/types/huddl';
 
 function StandingRow({ entry }: { entry: MotorsportStandingEntry }) {
   return (

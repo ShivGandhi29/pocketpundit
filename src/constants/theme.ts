@@ -1,6 +1,6 @@
 import { Platform } from 'react-native';
 
-// PocketPundit is dark-mode-only by design (same as the web prototype's
+// Huddl is dark-mode-only by design (same as the web prototype's
 // `color-scheme: dark`), so there's no light palette to switch to.
 export const Colors = {
   background: '#0b0e14',

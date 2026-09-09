@@ -14,7 +14,7 @@ import { LeaguePicker } from '@/components/LeaguePicker';
 import { ProgressDots } from '@/components/onboarding/ProgressDots';
 import { WelcomeScreen } from '@/components/onboarding/WelcomeScreen';
 import { TeamPicker } from '@/components/TeamPicker';
-import type { AppState, FavoriteTeam, League } from '@/types/pocketpundit';
+import type { AppState, FavoriteTeam, League } from '@/types/huddl';
 
 export function OnboardingFlow({
   leagues,

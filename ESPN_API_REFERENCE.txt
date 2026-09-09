@@ -1,7 +1,7 @@
 ESPN PUBLIC API REFERENCE
 =========================
 Everything below was verified live against the API on 2026-08-28 while building
-PocketPundit. This is ESPN's free, keyless, UNOFFICIAL public API - there's no
+Huddl. This is ESPN's free, keyless, UNOFFICIAL public API - there's no
 published spec, no versioning guarantee, and no rate-limit documentation.
 Field shapes have been observed to change without notice, so treat this as a
 snapshot, not a contract.
@@ -246,7 +246,7 @@ NOTES / GOTCHAS
   - ESPN's pre-formatted date/time strings (status.type.detail etc.) are in a
     FIXED timezone (typically US Eastern), not the request's or device's
     timezone - reformat the raw `date` (ISO UTC) client-side for correct
-    local-time display, exactly as PocketPundit's src/utils/formatGameTime.ts
+    local-time display, exactly as Huddl's src/utils/formatGameTime.ts
     does.
   - Live win-probability is on both /scoreboard (latest point only) and
     /summary (the full time series across the game) - use whichever

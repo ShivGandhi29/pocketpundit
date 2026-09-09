@@ -8,12 +8,12 @@ export default function TermsAndConditions() {
       sections={[
         {
           heading: 'Acceptance',
-          body: 'By using PocketPundit, you agree to these terms. If you disagree with any part of them, please don\'t use the app.',
+          body: 'By using Huddl, you agree to these terms. If you disagree with any part of them, please don\'t use the app.',
         },
         {
-          heading: 'What PocketPundit is',
+          heading: 'What Huddl is',
           body:
-            "PocketPundit is a personal companion app for browsing publicly available sports schedules, scores, and standings, with an optional on-device feature that generates a short, informal analysis of an upcoming or in-progress matchup.",
+            "Huddl is a personal companion app for browsing publicly available sports schedules, scores, and standings, with an optional on-device feature that generates a short, informal analysis of an upcoming or in-progress matchup.",
         },
         {
           heading: 'Not betting or financial advice',
@@ -23,16 +23,16 @@ export default function TermsAndConditions() {
         {
           heading: 'Accuracy of sports data',
           body:
-            "Scores, schedules, and stats come from a third-party public API and may occasionally be delayed, incomplete, or incorrect. PocketPundit doesn't guarantee the accuracy of any data it displays.",
+            "Scores, schedules, and stats come from a third-party public API and may occasionally be delayed, incomplete, or incorrect. Huddl doesn't guarantee the accuracy of any data it displays.",
         },
         {
           heading: 'No warranty',
-          body: 'PocketPundit is provided "as is," without warranties of any kind, express or implied.',
+          body: 'Huddl is provided "as is," without warranties of any kind, express or implied.',
         },
         {
           heading: 'Limitation of liability',
           body:
-            'To the fullest extent permitted by law, PocketPundit and its developer are not liable for any damages arising from your use of, or inability to use, the app.',
+            'To the fullest extent permitted by law, Huddl and its developer are not liable for any damages arising from your use of, or inability to use, the app.',
         },
         {
           heading: 'Changes to these terms',

@@ -11,7 +11,7 @@ import { useLocalAI } from '@/contexts/LocalAIContext';
 import { Colors, Radius, Spacing } from '@/constants/theme';
 import { Fonts } from '@/constants/fonts';
 import { formatLocalKickoff } from '@/utils/formatGameTime';
-import type { MotorsportEvent, MotorsportEventDetail, MotorsportSession } from '@/types/pocketpundit';
+import type { MotorsportEvent, MotorsportEventDetail, MotorsportSession } from '@/types/huddl';
 
 function SessionRow({ session }: { session: MotorsportSession }) {
   const isLive = session.state === 'in';

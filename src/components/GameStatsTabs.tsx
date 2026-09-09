@@ -15,7 +15,7 @@ import type {
   PlayerStatGroup,
   TeamStat,
   TeamStatLine,
-} from '@/types/pocketpundit';
+} from '@/types/huddl';
 
 type Tab = 'leaders' | 'boxscore' | 'teamstats';
 

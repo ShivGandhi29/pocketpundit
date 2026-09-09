@@ -4,7 +4,7 @@ import { Colors } from '@/constants/theme';
 // awesome-design DESIGN.md library (.claude/skills/awesome-design). Spotify's
 // component geometry (full-pill buttons, bold/regular type contrast, heavy
 // shadow-based elevation instead of a border) is applied here; its color
-// palette is not — PocketPundit already has its own near-black background
+// palette is not — Huddl already has its own near-black background
 // and green accent, close enough to Spotify's own that swapping palettes
 // would only make onboarding clash with the matchups screen it hands off to.
 // `Elevation` (the shadow itself) lives in the shared theme now that the

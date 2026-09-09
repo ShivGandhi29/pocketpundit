@@ -15,7 +15,7 @@ import type {
   TeamInjury,
   TeamStanding,
   WeekCalendar,
-} from '@/types/pocketpundit';
+} from '@/types/huddl';
 
 // No CORS proxy needed here: this app is native (iOS/Android), and CORS is a
 // browser-enforced restriction that doesn't apply to native fetch calls.

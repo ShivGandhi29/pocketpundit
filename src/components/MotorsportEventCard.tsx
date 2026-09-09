@@ -8,7 +8,7 @@ import { Colors, Radius, Spacing } from '@/constants/theme';
 import { Fonts } from '@/constants/fonts';
 import { formatKickoffTime } from '@/utils/formatGameTime';
 import { teamGradientColor } from '@/utils/teamGradient';
-import type { MotorsportEvent } from '@/types/pocketpundit';
+import type { MotorsportEvent } from '@/types/huddl';
 
 const RANGE_FORMAT = new Intl.DateTimeFormat(undefined, { month: 'short', day: 'numeric' });
 

@@ -2,17 +2,17 @@ import { useRouter } from 'expo-router';
 import { useEffect, useState } from 'react';
 import { ActivityIndicator, StyleSheet, View } from 'react-native';
 
-import { LeaguePicker } from '@/components/LeaguePicker';
+import { TeamPicker } from '@/components/TeamPicker';
 import { LEAGUES } from '@/services/api';
 import { loadState, saveState } from '@/storage/state';
 import { Colors } from '@/constants/theme';
-import type { AppState } from '@/types/huddl';
+import type { AppState, FavoriteTeam } from '@/types/huddl';
 
-// Standalone leagues editor — no longer chains into the team picker (see
-// PLAN.md decision to decouple the two): picking which leagues you follow
-// and picking favorite teams within them are separate concerns you should
-// be able to touch independently from Settings.
-export default function SettingsLeagues() {
+// Standalone favorite-teams editor — the counterpart to leagues.tsx now that
+// the two no longer chain into each other. Shows favorite-team pickers for
+// whichever team-kind leagues are currently followed; TeamPicker itself
+// handles the "no team leagues followed yet" empty state.
+export default function SettingsTeams() {
   const router = useRouter();
   const [state, setState] = useState<AppState | null>(null);
 
@@ -28,13 +28,16 @@ export default function SettingsLeagues() {
     );
   }
 
+  const teamLeagues = LEAGUES.filter((l) => state.selectedLeagueIds.includes(l.id));
+
   return (
-    <LeaguePicker
-      leagues={LEAGUES}
-      preselected={state.selectedLeagueIds}
-      primaryLabel="Save"
-      onContinue={async (selectedLeagueIds) => {
-        await saveState({ ...state, onboarded: true, selectedLeagueIds });
+    <TeamPicker
+      leagues={teamLeagues}
+      initialFavorites={state.favoriteTeams}
+      backLabel="Cancel"
+      onBack={() => router.back()}
+      onFinish={async (favoriteTeams: Record<string, FavoriteTeam>) => {
+        await saveState({ ...state, favoriteTeams });
         router.back();
       }}
     />

@@ -3,7 +3,7 @@ import { Text } from '@/components/AppText';
 
 import { Colors, Elevation, Radius, Spacing } from '@/constants/theme';
 import { Fonts } from '@/constants/fonts';
-import type { SeasonWeek } from '@/types/pocketpundit';
+import type { SeasonWeek } from '@/types/huddl';
 
 const MONTH_DAY = new Intl.DateTimeFormat(undefined, { month: 'short', day: 'numeric' });
 

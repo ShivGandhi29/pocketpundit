@@ -9,7 +9,7 @@ import { OnboardingHeader } from '@/components/onboarding/OnboardingHeader';
 import { PillButton } from '@/components/onboarding/PillButton';
 import { Colors, Radius, Spacing } from '@/constants/theme';
 import { Fonts } from '@/constants/fonts';
-import type { League } from '@/types/pocketpundit';
+import type { League } from '@/types/huddl';
 
 const GRID_COLUMNS = 3;
 // Wider than strictly needed for 3-per-row spacing — each tile's Liquid
@@ -49,10 +49,15 @@ export function LeaguePicker({
   leagues,
   preselected,
   onContinue,
+  primaryLabel = 'Continue',
 }: {
   leagues: League[];
   preselected: string[];
   onContinue: (selectedIds: string[]) => void;
+  /** Onboarding uses the default "Continue" since a teams step usually
+   * follows; opened standalone from Settings this is the only step, so the
+   * caller passes "Save" instead. */
+  primaryLabel?: string;
 }) {
   const [selected, setSelected] = useState<Set<string>>(new Set(preselected));
   const [query, setQuery] = useState('');
@@ -209,7 +214,7 @@ export function LeaguePicker({
         ) : null}
 
         <PillButton
-          label={selected.size === 0 ? 'Continue' : `Continue (${selected.size})`}
+          label={selected.size === 0 ? primaryLabel : `${primaryLabel} (${selected.size})`}
           onPress={() => onContinue(Array.from(selected))}
           disabled={selected.size === 0}
         />

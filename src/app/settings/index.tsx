@@ -56,7 +56,8 @@ export default function SettingsHome() {
           Preferences
         </Text>
         <View style={styles.group}>
-          <SettingsRow icon="trophy-outline" label="Leagues & Teams" onPress={() => router.push('/settings/leagues')} isLast />
+          <SettingsRow icon="trophy-outline" label="Leagues" onPress={() => router.push('/settings/leagues')} />
+          <SettingsRow icon="star-outline" label="Favorite Teams" onPress={() => router.push('/settings/teams')} isLast />
         </View>
 
         <Text style={styles.groupHeading} accessibilityRole="header">
@@ -83,7 +84,7 @@ export default function SettingsHome() {
           </>
         ) : null}
 
-        <Text style={styles.version}>PocketPundit v{APP_VERSION}</Text>
+        <Text style={styles.version}>Huddl v{APP_VERSION}</Text>
       </ScrollView>
     </SafeAreaView>
   );

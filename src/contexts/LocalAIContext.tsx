@@ -11,7 +11,7 @@ import type {
   SeasonStage,
   TeamInjury,
   TeamStanding,
-} from '@/types/pocketpundit';
+} from '@/types/huddl';
 
 const SYSTEM_PROMPT =
   'You are a concise, sharp sports analyst. Your training data has a cutoff date, so any specific facts you ' +

@@ -10,7 +10,7 @@ import { getTeamSchedule } from '@/services/api';
 import { Colors, Radius, Spacing } from '@/constants/theme';
 import { Fonts } from '@/constants/fonts';
 import { formatLocalKickoff } from '@/utils/formatGameTime';
-import type { ScheduleGame } from '@/types/pocketpundit';
+import type { ScheduleGame } from '@/types/huddl';
 
 const RESULT_COLOR: Record<NonNullable<ScheduleGame['result']>, string> = {
   W: Colors.accent,

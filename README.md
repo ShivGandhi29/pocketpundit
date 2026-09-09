@@ -1,4 +1,4 @@
-# PocketPundit
+# Huddl
 
 A stripped-down sports companion: pick the leagues and teams you actually care about, see their matchups with nothing else competing for your attention, and tap any game for a quick AI prediction — who's favored, what's driving the pick, and what could flip it. The prediction runs entirely **on your phone**, offline, with no server anywhere in the loop.
 
@@ -57,13 +57,13 @@ If the app is already installed and Metro is already running, you don't need eit
 
 ### From Claude Code
 
-Just ask — e.g. "run the app" or "launch pocketpundit and check the home screen." Claude Code will:
+Just ask — e.g. "run the app" or "launch huddl and check the home screen." Claude Code will:
 
 1. Check whether Metro/the simulator is already running before starting anything new.
 2. Run `npx expo run:ios` for a first build or after any native/config change (new native package, `app.json` edits like the `expo-font`/`expo-glass-effect` plugins); otherwise it relies on Fast Refresh for plain code edits.
 3. Verify with `xcrun simctl io booted screenshot` rather than just asserting success, since a build finishing isn't the same as the screen rendering correctly.
 
-One real limitation: Claude Code can't tap through the running app itself (no simulator input/automation tool is wired up here), so it can verify anything reachable via a cold launch, a deep link (`pocketpundit://…`), or a static screenshot, but a flow gated behind a tap you'd need to do (e.g. paging through onboarding, opening a specific game's detail sheet) needs you to check it by hand.
+One real limitation: Claude Code can't tap through the running app itself (no simulator input/automation tool is wired up here), so it can verify anything reachable via a cold launch, a deep link (`huddl://…`), or a static screenshot, but a flow gated behind a tap you'd need to do (e.g. paging through onboarding, opening a specific game's detail sheet) needs you to check it by hand.
 
 On first launch: pick the leagues you follow, optionally favorite teams, then browse matchups. Tap a game — the first tap ever will show a model download progress bar; every tap after that runs the analysis on-device in a few seconds. Use the gear icon any time to change leagues/teams.
 

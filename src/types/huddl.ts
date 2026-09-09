@@ -169,6 +169,8 @@ export interface TeamStanding {
 export interface AppState {
   onboarded: boolean;
   selectedLeagueIds: string[];
+  /** Keyed by `${leagueId}:${team.id}`, not team.id alone — ESPN scopes team
+   * ids per league, so two teams in different leagues can share a raw id. */
   favoriteTeams: Record<string, FavoriteTeam>;
 }
 

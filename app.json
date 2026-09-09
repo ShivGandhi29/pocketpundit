@@ -1,16 +1,16 @@
 {
   "expo": {
-    "name": "pocketpundit",
-    "slug": "pocketpundit",
+    "name": "huddl",
+    "slug": "huddl",
     "version": "1.0.0",
     "orientation": "portrait",
     "icon": "./assets/images/icon.png",
-    "scheme": "pocketpundit",
+    "scheme": "huddl",
     "userInterfaceStyle": "dark",
     "backgroundColor": "#0b0e14",
     "ios": {
       "icon": "./assets/expo.icon",
-      "bundleIdentifier": "com.detouradmin.pocketpundit"
+      "bundleIdentifier": "com.detouradmin.huddl"
     },
     "android": {
       "adaptiveIcon": {
@@ -20,7 +20,7 @@
         "monochromeImage": "./assets/images/android-icon-monochrome.png"
       },
       "predictiveBackGestureEnabled": false,
-      "package": "com.detouradmin.pocketpundit"
+      "package": "com.detouradmin.huddl"
     },
     "web": {
       "output": "static",
